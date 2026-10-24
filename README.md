@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SMART-SUPERVISI
 
-## Getting Started
+Aplikasi App Router untuk supervisi Patient Safety dan pemasangan/perawatan infus. UI menggunakan React, TypeScript, Tailwind CSS, dan Supabase PostgreSQL/Auth/Storage. Data operasional tidak diisi dengan seed atau array demo.
 
-First, run the development server:
+## Rencana migrasi
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Memindahkan instrumen, perhitungan skor, dan alur tujuh tahap dari HTML sumber ke modul domain TypeScript.
+2. Menyimpan supervisi, skor, RTL, jadwal, data perawat, dan metadata SOP di tabel Supabase.
+3. Membatasi perubahan data ke administrator terautentikasi melalui RLS dan RPC; pengunjung/perawat tanpa akun hanya membaca ringkasan terpilih.
+4. Menyimpan PDF SOP dalam bucket privat, memvalidasi PDF dan batas 3 MB, lalu membuka dokumen melalui signed URL singkat.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Menjalankan secara lokal
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Siapkan project Supabase PostgreSQL.
+2. Jalankan [`supabase/migrations/202610220001_initial_schema.sql`](./supabase/migrations/202610220001_initial_schema.sql) melalui Supabase SQL Editor.
+3. Salin `.env.example` menjadi `.env.local`, lalu isi `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` dari pengaturan API project Supabase. Jangan gunakan service-role key pada aplikasi.
+4. Jalankan `npm run dev`.
+5. Login Admin aplikasi menggunakan email: `admin@supervisi.com` dan password: `adminsupervisi123`. Perawat tidak perlu login (mode baca publik).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Fitur yang dimigrasikan
 
-## Learn More
+- Dashboard, rekapitulasi dan analisis per item, detail supervisi, tindak lanjut, jadwal, panduan SPO, serta administrasi data perawat.
+- Wizard tujuh tahap dengan butir observasi dari checklist SOP yang disimpan saat dokumen diunggah. Admin meninjau dan menyunting hasil ekstraksi lokal di menu SPO; saat supervisi checklist langsung digunakan untuk penilaian skor 0/1/2/N/A, kesimpulan, faktor penyebab, intervensi, FAIR, RTL, serta re-supervisi. PDF hasil scan tanpa lapisan teks perlu dilengkapi manual.
+- Tahap FAIR menyediakan tanda tangan digital dengan menggambar atau mengetik nama; tanda tangan tersimpan di hasil supervisi. Setelah penyimpanan, lembar hasil dapat dicetak atau disimpan sebagai PDF melalui dialog cetak browser.
+- SOP lama yang belum memiliki checklist dapat disiapkan melalui tombol **Atur checklist** pada dokumen di menu SPO & Modul. Perubahan checklist hanya berlaku untuk supervisi baru; hasil supervisi sebelumnya tetap menyimpan butir yang dipakai saat itu.
+- PDF SPO privat dengan signed URL. Ukuran maksimum 3 MB, sesuai HTML sumber.
+- Tampilan responsif, tema gelap, pemuatan/kondisi kosong/error, dan aksi yang hanya mengonfirmasi berhasil setelah Supabase membalas sukses.
 
-To learn more about Next.js, take a look at the following resources:
+## Struktur antarmuka
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Setiap menu memakai route App Router sendiri: Beranda `/`, Supervisi `/supervisi`, Tindak Lanjut `/tindak-lanjut`, Rekapitulasi `/rekap`, Jadwal `/jadwal`, Panduan SPO `/sop`, dan Perawat `/perawat`.
+- Detail hasil tersedia pada `/detail/[id]`.
+- Navigasi/sidebar, header seluler, footer, dan shell autentikasi berada di komponen terpisah pada `components/supervisi/`.
+- Status autentikasi, data Supabase, dan draft wizard berada pada provider di root layout agar draft tetap ada saat berpindah route.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Aturan bisnis yang dipertahankan
 
-## Deploy on Vercel
+- Persentase = skor / (2 × jumlah item bernilai angka) × 100, dibulatkan satu desimal; N/A dikecualikan dari penyebut. Kategori: Baik ≥76, Cukup ≥56, selainnya Kurang.
+- Item kritis bernilai 0 menghasilkan “Critical patient safety issue”; selain itu prioritas Tinggi bila kategori Kurang atau ada item kritis bernilai 1, Sedang untuk kategori Cukup, selainnya Rendah.
+- Tenggat standar berdasarkan prioritas adalah 3/7/14/30 hari; RTL untuk item kritis bernilai 0 menggunakan 3 hari.
+- Hasil re-supervisi tetap menjadi supervisi baru yang terhubung ke supervisi induk. Status RTL induk terkait diperbarui ketika skor pengulangan bernilai angka.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Catatan audit sumber
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- HTML lama menyimpan data, sesi, tema, akun, dan PIN di `localStorage`, menyertakan PIN default `1234`, dan memperbolehkan bypass login dengan PIN tersebut. Mekanisme ini tidak dibawa ke aplikasi.
+- Seed supervisi, akun contoh, dan SPO contoh pada HTML lama tidak dimigrasikan agar statistik produksi tidak terisi data demonstrasi.
+- Unggah PDF lama hanya menyimpan metadata di `localStorage`; file PDF sebenarnya tidak disimpan dan tombol detail hanya menampilkan alert. Migrasi ini menyimpan PDF sungguhan di Storage.
+- Tidak ditemukan pengunggahan atau relasi bukti penilaian pada kode sumber HTML. Karena itu aplikasi ini tidak mengarang alur bukti yang tidak ada pada sumber.
+- Kelola User pada sumber hanya membuat akun lokal berbasis PIN. Akun administrator sekarang dikelola di Supabase Auth, sedangkan halaman Perawat mengelola direktori perawat (bukan kredensial login).
+
+## Keamanan dan batasan operasional
+
+- Semua tabel operasional dibatasi RLS untuk administrator; pengguna anonim hanya dapat memanggil `get_public_overview()` untuk memperoleh kolom ringkasan yang ditujukan bagi perawat.
+- Bucket `supervisi-private` tidak publik. Kebijakan Storage hanya mengizinkan administrator mengubah file; file terbit dapat dibaca melalui signed URL berdurasi 60 detik.
+- RLS tidak menyediakan akses tulis untuk role anon. Akun Auth tanpa entri aktif pada `admin_profiles` tetap berperilaku sebagai pengunjung baca-saja.
+- Profil admin pertama harus dibuat dari Dashboard/SQL Editor seperti langkah di atas. Pembuatan akun Auth lain tidak dilakukan melalui browser.
+
+## Pemeriksaan
+
+Jalankan `npm run lint` dan `npm run build`. Pengujian terhadap project Supabase nyata memerlukan URL, anon key, migrasi yang telah dijalankan, dan setidaknya satu profil administrator yang dikonfigurasi pemilik project.
