@@ -2,18 +2,17 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useSupervisi } from "../context";
 import { getSupabaseBrowserClient } from "../../../lib/supabase/browser";
 import { ITEMS, type AssessmentItem } from "../../../lib/instruments";
 import { calculateScore, formatDate } from "../../../lib/scoring";
 import { EmptyState, PANEL, ScoreSummary, StatusPill } from "../ui";
 
-export function DetailPage() {
-  const params = useParams<{ id: string }>();
+export function DetailPage({ id }: { id: string }) {
   const router = useRouter();
   const { data, isAdmin, startDraft, setError, setNotice, refreshData } = useSupervisi();
-  const detail = data.supervisions.find((row) => row.id === params.id);
+  const detail = data.supervisions.find((row) => row.id === id);
   const supabase = getSupabaseBrowserClient();
 
   const scoreResult = useMemo(() => {

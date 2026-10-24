@@ -1,7 +1,16 @@
 import { Suspense } from "react";
 import { DetailPage } from "../../../components/supervisi/pages/DetailPage";
 
-export default function Page() {
+async function DetailRouteContent({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <DetailPage id={id} />;
+}
+
+export default function Page({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense
       fallback={
@@ -13,7 +22,7 @@ export default function Page() {
         </div>
       }
     >
-      <DetailPage />
+      <DetailRouteContent params={params} />
     </Suspense>
   );
 }
