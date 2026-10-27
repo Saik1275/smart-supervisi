@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-emerald-300">SMART-SUPERVISI</p><h2 id="admin-login-title" className="mt-1 text-xl font-bold">Login Administrator</h2></div><button type="button" aria-label="Tutup" className="text-2xl text-slate-400" onClick={() => setLoginOpen(false)}>×</button></div>
           <p className="text-xs text-slate-300">Masukkan akun administrator sistem SMART-SUPERVISI.</p>
           <label className="block text-xs font-bold text-slate-200">Email<input className={`${CONTROL} mt-1`} name="email" type="email" required autoComplete="username" defaultValue="admin@supervisi.com" /></label>
-          <label className="block text-xs font-bold text-slate-200">Password<input className={`${CONTROL} mt-1`} name="password" type="password" required autoComplete="current-password" defaultValue="adminsupervisi123" /></label>
+          <label className="block text-xs font-bold text-slate-200">Password<input className={`${CONTROL} mt-1`} name="password" type="password" required autoComplete="new-password" /></label>
           <button className={`${BUTTON} w-full mt-2`} disabled={busy}>{busy ? "Memverifikasi…" : "Masuk sebagai Admin"}</button>
         </form>
       </div>}

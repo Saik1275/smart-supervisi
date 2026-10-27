@@ -457,7 +457,7 @@ export function SupervisiProvider({ children }: { children: ReactNode }) {
       await load(true);
     } else {
       setBusy(false);
-      setError("Email atau password administrator salah. Gunakan email: admin@supervisi.com dan password: adminsupervisi123");
+      setError("Email atau password administrator salah. Periksa kembali kredensial Anda.");
     }
   }
 

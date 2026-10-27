@@ -9,7 +9,7 @@ import { BUTTON, CONTROL, PANEL } from "../ui";
 export function LoginPage() {
   const { isAdmin, user, busy, signIn, signOut } = useSupervisi();
   const [email, setEmail] = useState("admin@supervisi.com");
-  const [password, setPassword] = useState("adminsupervisi123");
+  const [password, setPassword] = useState("");
 
   if (isAdmin) {
     return (
@@ -104,11 +104,10 @@ export function LoginPage() {
               name="password"
               type="password"
               required
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={`${CONTROL} mt-1.5`}
-              placeholder="••••••••••••"
             />
           </div>
 
