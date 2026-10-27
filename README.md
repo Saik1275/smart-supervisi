@@ -24,6 +24,7 @@ Aplikasi App Router untuk supervisi Patient Safety dan pemasangan/perawatan infu
 - Tahap FAIR menyediakan tanda tangan digital dengan menggambar atau mengetik nama; tanda tangan tersimpan di hasil supervisi. Setelah penyimpanan, lembar hasil dapat dicetak atau disimpan sebagai PDF melalui dialog cetak browser.
 - SOP lama yang belum memiliki checklist dapat disiapkan melalui tombol **Atur checklist** pada dokumen di menu SPO & Modul. Perubahan checklist hanya berlaku untuk supervisi baru; hasil supervisi sebelumnya tetap menyimpan butir yang dipakai saat itu.
 - PDF SPO privat dengan signed URL. Ukuran maksimum 3 MB, sesuai HTML sumber.
+- Penghapusan perawat bersifat permanen dan turut menghapus seluruh riwayat supervisi, skor, serta tindak lanjut terkait; jadwal tetap dipertahankan.
 - Tampilan responsif, tema gelap, pemuatan/kondisi kosong/error, dan aksi yang hanya mengonfirmasi berhasil setelah Supabase membalas sukses.
 
 ## Struktur antarmuka

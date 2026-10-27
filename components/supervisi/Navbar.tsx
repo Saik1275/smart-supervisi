@@ -158,14 +158,6 @@ export function SidebarNavbar() {
           </button>
         )}
       </div>
-
-      {/* Hospital / Footer Info */}
-      <div className="border-t border-slate-200/80 px-4 py-3 dark:border-slate-800">
-        <div className="rounded-xl bg-slate-50 p-2.5 text-[11px] text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
-          <p className="font-bold text-slate-700 dark:text-slate-300">RS Semen Gresik</p>
-          <p className="text-[10px]">Komite Mutu &amp; Keselamatan Pasien (Patient Safety)</p>
-        </div>
-      </div>
     </aside>
   );
 }

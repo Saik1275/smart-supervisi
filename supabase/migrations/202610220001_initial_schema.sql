@@ -42,7 +42,7 @@ create table if not exists public.schedules (
 create table if not exists public.supervisions (
   id uuid primary key default gen_random_uuid(),
   supervision_date date not null,
-  nurse_id uuid not null references public.nurses (id) on delete restrict,
+  nurse_id uuid not null references public.nurses (id) on delete cascade,
   unit text not null check (length(trim(unit)) > 0),
   supervisor text not null check (length(trim(supervisor)) > 0),
   parent_id uuid references public.supervisions (id) on delete set null,
@@ -55,6 +55,16 @@ create table if not exists public.supervisions (
   created_by uuid,
   created_at timestamptz not null default now()
 );
+
+-- Menghapus perawat turut menghapus seluruh riwayat supervisinya.
+alter table public.supervisions
+  drop constraint if exists supervisions_nurse_id_fkey;
+
+alter table public.supervisions
+  add constraint supervisions_nurse_id_fkey
+  foreign key (nurse_id)
+  references public.nurses (id)
+  on delete cascade;
 
 -- Relasi Jadwal dengan Supervisi yang terlaksana
 do $$

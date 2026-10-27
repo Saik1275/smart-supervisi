@@ -14,6 +14,7 @@ export function NursesPage() {
 
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingNurseId, setEditingNurseId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [unitFilter, setUnitFilter] = useState("Semua Unit");
   const [statusFilter, setStatusFilter] = useState<"semua" | "aktif" | "nonaktif">("semua");
@@ -88,27 +89,95 @@ export function NursesPage() {
     });
   }, [nurses, search, unitFilter, statusFilter]);
 
-  async function addNurse(event: React.FormEvent<HTMLFormElement>) {
+  async function saveNurse(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !isAdmin) return;
     if (!form.full_name.trim() || !form.unit.trim()) {
       setError("Nama lengkap dan unit perawat wajib diisi.");
       return;
     }
+
     setBusy(true);
-    const { error } = await supabase.from("nurses").insert({
+    const nurseData = {
       full_name: form.full_name.trim(),
       unit: form.unit.trim(),
-    });
-    setBusy(false);
+    };
 
-    if (error) {
-      setError(`Data perawat gagal disimpan: ${error.message}`);
-    } else {
+    try {
+      const { error } = editingNurseId
+        ? await supabase
+            .from("nurses")
+            .update(nurseData)
+            .eq("id", editingNurseId)
+            .select("id")
+            .single()
+        : await supabase.from("nurses").insert(nurseData);
+
+      if (error) {
+        setError(`Data perawat gagal disimpan: ${error.message}`);
+        return;
+      }
+
       setForm({ full_name: "", unit: "" });
+      setEditingNurseId(null);
       setShowForm(false);
       await refreshData();
-      setNotice("Data perawat berhasil ditambahkan.");
+      setNotice(
+        editingNurseId
+          ? "Data perawat berhasil diperbarui."
+          : "Data perawat berhasil ditambahkan."
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? `Data perawat gagal disimpan: ${reason.message}`
+          : "Data perawat gagal disimpan."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteNurse(id: string, fullName: string) {
+    if (!supabase || !isAdmin) return;
+
+    const supervisionCount = data.supervisions.filter(
+      (supervision) => supervision.nurse_id === id
+    ).length;
+
+    if (
+      !window.confirm(
+        `Hapus perawat "${fullName}" secara permanen? ${supervisionCount} riwayat supervisi beserta nilai dan tindak lanjut terkait juga akan dihapus. Jadwal tetap dipertahankan. Tindakan ini tidak dapat dibatalkan.`
+      )
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("nurses")
+        .delete()
+        .eq("id", id)
+        .select("id")
+        .single();
+      if (error) {
+        setError(
+          `Data perawat gagal dihapus: ${error.message}. Pastikan migrasi 202610270001_cascade_delete_nurse_supervisions.sql sudah dijalankan di Supabase.`
+        );
+        return;
+      }
+
+      await refreshData();
+      setNotice(`Data perawat "${fullName}" berhasil dihapus.`);
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? `Data perawat gagal dihapus: ${reason.message}`
+          : "Data perawat gagal dihapus."
+      );
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -157,7 +226,17 @@ export function NursesPage() {
 
         {isAdmin && (
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) {
+                setForm({ full_name: "", unit: "" });
+                setEditingNurseId(null);
+                setShowForm(false);
+              } else {
+                setForm({ full_name: "", unit: "" });
+                setEditingNurseId(null);
+                setShowForm(true);
+              }
+            }}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold shadow-sm transition ${showForm
               ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
               : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 hover:shadow"
@@ -221,12 +300,12 @@ export function NursesPage() {
       {isAdmin && showForm && (
         <form
           className={`${PANEL} animate-in fade-in slide-in-from-top-3 duration-200 space-y-4 border-2 border-emerald-500/20`}
-          onSubmit={(e) => void addNurse(e)}
+          onSubmit={(e) => void saveNurse(e)}
         >
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Tambah Tenaga Perawat Baru
+                {editingNurseId ? "Edit Data Perawat" : "Tambah Tenaga Perawat Baru"}
               </h3>
               <p className="text-xs text-slate-500">
                 Data perawat akan langsung tersedia untuk pemilihan supervisi dan penjadwalan.
@@ -234,7 +313,11 @@ export function NursesPage() {
             </div>
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setForm({ full_name: "", unit: "" });
+                setEditingNurseId(null);
+                setShowForm(false);
+              }}
               className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -280,13 +363,21 @@ export function NursesPage() {
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setForm({ full_name: "", unit: "" });
+                setEditingNurseId(null);
+                setShowForm(false);
+              }}
               className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Batal
             </button>
             <button className={BUTTON} disabled={busy}>
-              {busy ? "Menyimpan..." : "Simpan Perawat"}
+              {busy
+                ? "Menyimpan..."
+                : editingNurseId
+                  ? "Simpan Perubahan"
+                  : "Simpan Perawat"}
             </button>
           </div>
         </form>
@@ -443,16 +534,39 @@ export function NursesPage() {
                 {/* Actions */}
                 <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                   {isAdmin && (
-                    <button
-                      onClick={() => void toggleNurse(nurse.id, nurse.active)}
-                      className={`text-xs font-semibold transition ${nurse.active
-                        ? "text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400"
-                        : "text-emerald-600 hover:underline dark:text-emerald-400"
-                        }`}
-                      disabled={busy}
-                    >
-                      {nurse.active ? "Nonaktifkan" : "Aktifkan"}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => void toggleNurse(nurse.id, nurse.active)}
+                        className={`text-xs font-semibold transition ${nurse.active
+                          ? "text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400"
+                          : "text-emerald-600 hover:underline dark:text-emerald-400"
+                          }`}
+                        disabled={busy}
+                      >
+                        {nurse.active ? "Nonaktifkan" : "Aktifkan"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm({ full_name: nurse.full_name, unit: nurse.unit });
+                          setEditingNurseId(nurse.id);
+                          setShowForm(true);
+                        }}
+                        className="text-xs font-semibold text-emerald-700 transition hover:underline dark:text-emerald-400"
+                        disabled={busy}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteNurse(nurse.id, nurse.full_name)}
+                        className="text-xs font-semibold text-rose-600 transition hover:underline dark:text-rose-400"
+                        disabled={busy}
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   )}
 
                   {nurse.active && (
