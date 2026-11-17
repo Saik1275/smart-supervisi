@@ -9,7 +9,7 @@ import {
   INTERVENTIONS,
 } from "../../../lib/instruments";
 import { addDays, calculateScore, formatDate, type ScoreValue } from "../../../lib/scoring";
-import { BUTTON, CONTROL, EmptyState, PANEL, RecordsTable, SECONDARY, ScoreSummary } from "../ui";
+import { BUTTON, CARD_SURFACE, CONTROL, EmptyState, PANEL, RecordsTable, SECONDARY, ScoreSummary } from "../ui";
 
 function TextArea({
   label,
@@ -137,12 +137,6 @@ function DigitalSignature({
 
 function hasDigitalSignatures(
   fair: {
-    signatureMode?: "draw" | "type";
-    signatureData?: string;
-    signatureName?: string;
-    supervisorSignatureMode?: "draw" | "type";
-    supervisorSignatureData?: string;
-    supervisorSignatureName?: string;
     nurseSignatureMode?: "draw" | "type";
     nurseSignatureData?: string;
     nurseSignatureName?: string;
@@ -150,30 +144,21 @@ function hasDigitalSignatures(
     headNurseSignatureData?: string;
     headNurseSignatureName?: string;
   },
-  defaultSupervisor = "",
   defaultNurse = "",
+  defaultHeadNurse = "",
 ) {
-  const supName = fair.supervisorSignatureName?.trim() || fair.signatureName?.trim() || defaultSupervisor.trim();
-  const supMode = fair.supervisorSignatureMode || fair.signatureMode || "draw";
-  const supData = fair.supervisorSignatureData || fair.signatureData;
-  const isSupervisorSigned = Boolean(supName && (supMode === "type" || supData));
-
   const nName = fair.nurseSignatureName?.trim() || defaultNurse.trim();
   const nMode = fair.nurseSignatureMode || "draw";
   const nData = fair.nurseSignatureData;
   const isNurseSigned = Boolean(nName && (nMode === "type" || nData));
 
-  const headName = fair.headNurseSignatureName?.trim();
+  const headName = defaultHeadNurse.trim();
   const headMode = fair.headNurseSignatureMode || "draw";
   const headData = fair.headNurseSignatureData;
   const isHeadNurseSigned = Boolean(headName && (headMode === "type" || headData));
 
-  const isValid = isSupervisorSigned && isNurseSigned && isHeadNurseSigned;
-  return { isSupervisorSigned, isNurseSigned, isHeadNurseSigned, isValid };
-}
-
-function hasDigitalSignature(fair: Parameters<typeof hasDigitalSignatures>[0]) {
-  return hasDigitalSignatures(fair).isValid;
+  const isValid = isNurseSigned && isHeadNurseSigned;
+  return { isNurseSigned, isHeadNurseSigned, isValid };
 }
 
 export function SupervisionPage() {
@@ -233,7 +218,7 @@ export function SupervisionPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <section className={`${PANEL} text-center py-10 sm:py-12`}>
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-700 text-3xl font-extrabold text-white shadow-md shadow-emerald-700/20">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-700 text-3xl font-extrabold text-white shadow-md shadow-teal-700/20">
             +
           </div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
@@ -353,8 +338,8 @@ export function SupervisionPage() {
       )}
 
       {/* Stepper Header Navigation */}
-      <div className="overflow-x-auto pb-2">
-        <div className="flex min-w-[680px] items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="min-w-0">
+        <div className={`${CARD_SURFACE} flex flex-wrap items-stretch gap-1.5 p-2`}>
           {steps.map((s, index) => {
             const isCurrent = step === index;
             const isCompleted = step > index;
@@ -362,18 +347,18 @@ export function SupervisionPage() {
               <button
                 key={s.label}
                 onClick={() => goToStep(index)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold transition-all ${isCurrent
-                    ? "bg-emerald-600 text-white shadow-sm font-bold"
+                className={`flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold transition-all ${isCurrent
+                    ? "bg-teal-700 text-white shadow-sm font-bold"
                     : isCompleted
-                      ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      ? "text-teal-800 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/40 dark:text-teal-300"
                       : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                   }`}
               >
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${isCurrent
-                      ? "bg-white text-emerald-800"
+                      ? "bg-white text-teal-800"
                       : isCompleted
-                        ? "bg-emerald-600 text-white"
+                        ? "bg-teal-600 text-white"
                         : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
                     }`}
                 >
@@ -424,35 +409,13 @@ export function SupervisionPage() {
               </label>
 
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Nama Supervisor <span className="text-rose-500">*</span>
+                Nama Supervisor / Kepala Ruangan (Karu) <span className="text-rose-500">*</span>
                 <input
                   className={`${CONTROL} mt-1.5`}
                   value={draft.supervisor}
-                  placeholder="Nama lengkap supervisor klinis"
-                  onChange={(event) => {
-                    text("supervisor", event.target.value);
-                    updateDraft("fair", {
-                      ...draft.fair,
-                      supervisorSignatureName: event.target.value,
-                      signatureName: event.target.value,
-                    });
-                  }}
+                  placeholder="Nama supervisor sekaligus kepala ruangan"
+                  onChange={(event) => text("supervisor", event.target.value)}
                   required
-                />
-              </label>
-
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                Nama Kepala Ruangan (Karu)
-                <input
-                  className={`${CONTROL} mt-1.5`}
-                  value={draft.fair.headNurseSignatureName ?? ""}
-                  placeholder="Nama Kepala Ruangan unit terkait"
-                  onChange={(event) =>
-                    updateDraft("fair", {
-                      ...draft.fair,
-                      headNurseSignatureName: event.target.value,
-                    })
-                  }
                 />
               </label>
 
@@ -566,8 +529,7 @@ export function SupervisionPage() {
                 Checklist SOP sudah disetujui admin saat dokumen diunggah. Tidak perlu verifikasi ulang pada lembar supervisi.
               </div>
 
-              {/* Real-time score indicator */}
-              <div className="ml-auto flex w-fit shrink-0 items-center gap-3 rounded-2xl bg-slate-900 px-4 py-2.5 text-white shadow-md dark:bg-slate-800">
+              <div className="flex w-full min-w-0 flex-wrap items-center gap-3 rounded-2xl bg-teal-800 px-4 py-2.5 text-white shadow-md sm:w-fit sm:ml-auto">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-emerald-400 block">Progress Penilaian</span>
                   <span className="text-sm font-extrabold">
@@ -595,8 +557,8 @@ export function SupervisionPage() {
                             : "border-amber-200/80 bg-amber-50/20 dark:border-amber-900/40"
                           }`}
                       >
-                        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                          <div className="flex-1">
+                        <div className="flex min-w-0 flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-extrabold text-slate-400">
                                 #{itemIndex + 1}
@@ -616,7 +578,7 @@ export function SupervisionPage() {
                           </div>
 
                           {/* Score selector buttons */}
-                          <div className="flex shrink-0 items-center gap-1.5">
+                          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                             {([
                               { val: 0, label: "0", desc: "Tidak dilakukan", activeBg: "bg-rose-600 border-rose-600 text-white" },
                               { val: 1, label: "1", desc: "Sebagian/belum lengkap", activeBg: "bg-amber-500 border-amber-500 text-white" },
@@ -881,16 +843,16 @@ export function SupervisionPage() {
               <div className="space-y-4">
                 <div className="border-b border-slate-200/80 pb-2 dark:border-slate-800">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Tanda Tangan Pengesahan (3 Pihak)
+                    Tanda Tangan Pengesahan (2 Pihak)
                   </h3>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Tanda tangan digital oleh Perawat yang disupervisi, Supervisor Klinis, dan Kepala Ruangan sebagai bukti kesepakatan observasi dan umpan balik model FAIR.
+                    Tanda tangan digital oleh Kepala Ruangan selaku penilai dan Perawat yang dinilai sebagai bukti kesepakatan observasi dan umpan balik model FAIR.
                   </p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                   {/* 1. Tanda Tangan Perawat yang Disupervisi */}
-                  <section className="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/40">
+                  <section className="flex flex-col justify-between space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-800/40">
                     <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 dark:border-slate-700/60">
                       <div>
                         <span className="inline-block rounded-md bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-800 dark:bg-sky-950 dark:text-sky-300">
@@ -965,115 +927,23 @@ export function SupervisionPage() {
                     )}
                   </section>
 
-                  {/* 2. Tanda Tangan Supervisor Klinis */}
-                  <section className="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/40">
+                  {/* 2. Tanda Tangan Kepala Ruangan selaku penilai */}
+                  <section className="flex flex-col justify-between space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-800/40">
                     <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 dark:border-slate-700/60">
                       <div>
                         <span className="inline-block rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                           Pihak 2: Penilai
                         </span>
                         <h4 className="mt-1 text-xs font-bold text-slate-900 dark:text-white">
-                          Supervisor Klinis
-                        </h4>
-                      </div>
-                      <span className="text-[11px] text-slate-400">Supervisor Penilai</span>
-                    </div>
-
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Nama Supervisor <span className="text-rose-500">*</span>
-                      <input
-                        className={`${CONTROL} mt-1.5`}
-                        value={draft.fair.supervisorSignatureName ?? draft.fair.signatureName ?? draft.supervisor ?? ""}
-                        onChange={(event) =>
-                          updateDraft("fair", {
-                            ...draft.fair,
-                            supervisorSignatureName: event.target.value,
-                            signatureName: event.target.value,
-                          })
-                        }
-                        placeholder="Nama Supervisor Klinis"
-                        required
-                      />
-                    </label>
-
-                    <div className="flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        className={(draft.fair.supervisorSignatureMode || draft.fair.signatureMode) !== "type" ? BUTTON : SECONDARY}
-                        onClick={() =>
-                          updateDraft("fair", {
-                            ...draft.fair,
-                            supervisorSignatureMode: "draw",
-                            signatureMode: "draw",
-                          })
-                        }
-                      >
-                        Gambar tanda tangan
-                      </button>
-                      <button
-                        type="button"
-                        className={(draft.fair.supervisorSignatureMode || draft.fair.signatureMode) === "type" ? BUTTON : SECONDARY}
-                        onClick={() =>
-                          updateDraft("fair", {
-                            ...draft.fair,
-                            supervisorSignatureMode: "type",
-                            signatureMode: "type",
-                          })
-                        }
-                      >
-                        Ketik tanda tangan
-                      </button>
-                    </div>
-
-                    {(draft.fair.supervisorSignatureMode || draft.fair.signatureMode) === "type" ? (
-                      <div className="flex min-h-36 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-600">
-                        <span className="font-serif text-2xl italic text-slate-900 dark:text-slate-900">
-                          {draft.fair.supervisorSignatureName || draft.fair.signatureName || draft.supervisor || "Nama Supervisor"}
-                        </span>
-                      </div>
-                    ) : (
-                      <DigitalSignature
-                        value={draft.fair.supervisorSignatureData || draft.fair.signatureData || ""}
-                        onChange={(signatureData) =>
-                          updateDraft("fair", {
-                            ...draft.fair,
-                            supervisorSignatureData: signatureData,
-                            signatureData,
-                          })
-                        }
-                      />
-                    )}
-                  </section>
-
-                  {/* 3. Tanda Tangan Kepala Ruangan (Karu) */}
-                  <section className="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/40 md:col-span-2 lg:col-span-1">
-                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 dark:border-slate-700/60">
-                      <div>
-                        <span className="inline-block rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                          Pihak 3: Mengetahui
-                        </span>
-                        <h4 className="mt-1 text-xs font-bold text-slate-900 dark:text-white">
                           Kepala Ruangan (Karu)
                         </h4>
                       </div>
-                      <span className="text-[11px] text-slate-400">Kepala Unit</span>
+                      <span className="text-[11px] text-slate-400">Kepala Ruangan</span>
                     </div>
 
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Nama Kepala Ruangan <span className="text-rose-500">*</span>
-                      <input
-                        className={`${CONTROL} mt-1.5`}
-                        value={draft.fair.headNurseSignatureName ?? ""}
-                        onChange={(event) =>
-                          updateDraft("fair", {
-                            ...draft.fair,
-                            headNurseSignatureName: event.target.value,
-                          })
-                        }
-                        placeholder="Nama Kepala Ruangan"
-                        required
-                      />
-                    </label>
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Nama Kepala Ruangan / Supervisor: <span className="font-bold">{draft.supervisor || "Belum diisi"}</span>
+                    </p>
 
                     <div className="flex flex-wrap gap-1.5">
                       <button
@@ -1105,7 +975,7 @@ export function SupervisionPage() {
                     {draft.fair.headNurseSignatureMode === "type" ? (
                       <div className="flex min-h-36 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-600">
                         <span className="font-serif text-2xl italic text-slate-900 dark:text-slate-900">
-                          {draft.fair.headNurseSignatureName || "Nama Kepala Ruangan"}
+                          {draft.supervisor || "Nama Kepala Ruangan"}
                         </span>
                       </div>
                     ) : (
@@ -1294,13 +1164,12 @@ export function SupervisionPage() {
                   return;
                 }
                 if (step === 5) {
-                  const sigStatus = hasDigitalSignatures(draft.fair, draft.supervisor, selectedNurse?.full_name);
+                  const sigStatus = hasDigitalSignatures(draft.fair, selectedNurse?.full_name, draft.supervisor);
                   if (!sigStatus.isValid) {
                     const missingParties: string[] = [];
                     if (!sigStatus.isNurseSigned) missingParties.push("Perawat yang disupervisi");
-                    if (!sigStatus.isSupervisorSigned) missingParties.push("Supervisor Klinis");
-                    if (!sigStatus.isHeadNurseSigned) missingParties.push("Kepala Ruangan");
-                    setError(`Lengkapi 3 tanda tangan (${missingParties.join(", ")}) sebelum melanjutkan.`);
+                    if (!sigStatus.isHeadNurseSigned) missingParties.push("Kepala Ruangan selaku penilai");
+                    setError(`Lengkapi 2 tanda tangan (${missingParties.join(", ")}) sebelum melanjutkan.`);
                     return;
                   }
                 }

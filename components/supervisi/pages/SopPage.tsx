@@ -574,7 +574,7 @@ export function SopPage() {
       {/* Upload Form (for Admin or triggered by user) */}
       {isAdmin && showUploadForm && (
         <form
-          className={`${PANEL} space-y-4 border-emerald-500/30 bg-emerald-50/20 shadow-md ring-1 ring-emerald-500/20 dark:bg-slate-900/80`}
+          className={`${PANEL} space-y-4 border-emerald-300/70 bg-emerald-50/20 dark:border-emerald-800/80 dark:bg-slate-900/80`}
           onSubmit={(event) => void saveSop(event)}
         >
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 dark:border-slate-700">
@@ -895,12 +895,12 @@ export function SopPage() {
               return (
                 <article
                   key={sop.id}
-                  className={`rounded-2xl border transition ${isInlineOpen
+                  className={`min-w-0 overflow-hidden rounded-2xl border transition ${isInlineOpen}
                     ? "border-emerald-500 bg-white shadow-md dark:border-emerald-600 dark:bg-slate-900"
                     : "border-slate-200 bg-slate-50/60 hover:border-slate-300 dark:border-slate-700/80 dark:bg-slate-900/50"
                     } p-4 sm:p-5`}
                 >
-                  <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+                  <div className="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-start">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusPill>{sop.category}</StatusPill>
@@ -936,7 +936,7 @@ export function SopPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:max-w-[46%]">
                       {/* Toggle Inline Preview */}
                       <button
                         className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition ${isInlineOpen
@@ -1078,7 +1078,7 @@ export function SopPage() {
 
                   {/* Edit SPO Form */}
                   {editingSopId === sop.id && (
-                    <div className="mt-4 space-y-4 rounded-2xl border-2 border-emerald-500/30 bg-emerald-50/20 p-4 shadow-md sm:p-5 dark:border-emerald-500/30 dark:bg-slate-900/90">
+                    <div className="mt-4 space-y-4 rounded-xl border border-emerald-300/70 bg-emerald-50/20 p-4 shadow-sm sm:p-5 dark:border-emerald-800/80 dark:bg-slate-900/90">
                       <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 dark:border-slate-700">
                         <div>
                           <h4 className="text-base font-bold text-slate-900 dark:text-white">

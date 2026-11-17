@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ITEMS, type AssessmentItem } from "../../../lib/instruments";
 import { calculateScore } from "../../../lib/scoring";
 import { useSupervisi } from "../context";
-import { EmptyState, PANEL, RecordsTable } from "../ui";
+import { CARD_SURFACE, EmptyState, PANEL, RecordsTable } from "../ui";
 
 export function RecapPage() {
   const { data, routerPush, startDraft } = useSupervisi();
@@ -150,7 +150,7 @@ export function RecapPage() {
           </button>
           <button
             onClick={() => startDraft()}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:from-emerald-500 hover:to-teal-500 hover:shadow"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-800 hover:shadow"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -163,9 +163,9 @@ export function RecapPage() {
       {/* KPI Cards Row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {/* Total Supervisi */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>Total Evaluasi</span>
+        <div className={`${CARD_SURFACE} p-4`}>
+          <div className="flex items-start justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span className="min-w-0 leading-snug">Total Evaluasi</span>
             <span className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-700 dark:text-emerald-400">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -179,9 +179,9 @@ export function RecapPage() {
         </div>
 
         {/* Rata-rata Kepatuhan */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>Rerata Kepatuhan</span>
+        <div className={`${CARD_SURFACE} p-4`}>
+          <div className="flex items-start justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span className="min-w-0 leading-snug">Rerata Kepatuhan</span>
             <span className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-600 dark:text-emerald-400">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -198,9 +198,9 @@ export function RecapPage() {
         </div>
 
         {/* Kategori Unggul / Baik */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>Kategori Baik (≥76%)</span>
+        <div className={`${CARD_SURFACE} p-4`}>
+          <div className="flex items-start justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span className="min-w-0 leading-snug">Kategori Baik (≥76%)</span>
             <span className="rounded-md bg-teal-500/10 p-1.5 text-teal-600 dark:text-teal-400">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -217,9 +217,9 @@ export function RecapPage() {
         </div>
 
         {/* Temuan Kritis / RTL */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>Perhatian Kritis</span>
+        <div className={`${CARD_SURFACE} p-4`}>
+          <div className="flex items-start justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span className="min-w-0 leading-snug">Perhatian Kritis</span>
             <span className="rounded-md bg-rose-500/10 p-1.5 text-rose-600 dark:text-rose-400">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -234,31 +234,31 @@ export function RecapPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center gap-4 overflow-x-auto border-b border-slate-200 no-scrollbar dark:border-slate-800">
         <button
           onClick={() => setActiveTab("riwayat")}
-          className={`relative pb-3 text-sm font-semibold transition ${
+          className={`relative shrink-0 pb-3 text-sm font-semibold transition ${
             activeTab === "riwayat"
-              ? "text-emerald-600 dark:text-emerald-400"
+              ? "text-teal-700 dark:text-teal-400"
               : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           }`}
         >
           Daftar Berkas Supervisi ({filteredRecords.length})
           {activeTab === "riwayat" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-teal-600 dark:bg-teal-400" />
           )}
         </button>
         <button
           onClick={() => setActiveTab("analisis")}
-          className={`relative pb-3 text-sm font-semibold transition ${
+          className={`relative shrink-0 pb-3 text-sm font-semibold transition ${
             activeTab === "analisis"
-              ? "text-emerald-600 dark:text-emerald-400"
+              ? "text-teal-700 dark:text-teal-400"
               : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           }`}
         >
           Analisis Capaian Butir SPO ({aggregate.length})
           {activeTab === "analisis" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-teal-600 dark:bg-teal-400" />
           )}
         </button>
       </div>
@@ -388,15 +388,15 @@ export function RecapPage() {
                 return (
                   <div
                     key={item.id}
-                    className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                    className="group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
                   >
                     <div>
-                      <div className="mb-1.5 flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      <div className="mb-1.5 flex min-w-0 items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-start gap-1.5">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                             #{index + 1}
                           </span>
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          <span className="min-w-0 break-words text-xs font-bold text-slate-800 dark:text-slate-200">
                             {item.title}
                           </span>
                         </div>

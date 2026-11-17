@@ -68,7 +68,7 @@ export function FollowUpPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <button
           onClick={() => setFilter("semua")}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`min-w-0 overflow-hidden rounded-2xl border p-4 text-left transition ${
             filter === "semua"
               ? "border-emerald-500 bg-emerald-50/40 shadow-sm dark:bg-emerald-950/20"
               : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
@@ -80,7 +80,7 @@ export function FollowUpPage() {
 
         <button
           onClick={() => setFilter("aktif")}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`min-w-0 overflow-hidden rounded-2xl border p-4 text-left transition ${
             filter === "aktif"
               ? "border-emerald-500 bg-emerald-50/40 shadow-sm dark:bg-emerald-950/20"
               : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
@@ -92,7 +92,7 @@ export function FollowUpPage() {
 
         <button
           onClick={() => setFilter("overdue")}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`min-w-0 overflow-hidden rounded-2xl border p-4 text-left transition ${
             filter === "overdue"
               ? "border-rose-500 bg-rose-50/40 shadow-sm dark:bg-rose-950/20"
               : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
@@ -104,7 +104,7 @@ export function FollowUpPage() {
 
         <button
           onClick={() => setFilter("selesai")}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`min-w-0 overflow-hidden rounded-2xl border p-4 text-left transition ${
             filter === "selesai"
               ? "border-emerald-500 bg-emerald-50/40 shadow-sm dark:bg-emerald-950/20"
               : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
@@ -118,7 +118,7 @@ export function FollowUpPage() {
       {/* Search and Filters */}
       <section className={`${PANEL} space-y-4`}>
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div className="flex flex-wrap gap-1.5 text-xs">
+          <div className="flex min-w-0 flex-wrap gap-1.5 text-xs">
             {[
               { key: "aktif", label: `Aktif (${stats.aktif})` },
               { key: "overdue", label: `Lewat Tenggat (${stats.overdue})` },
@@ -164,7 +164,7 @@ export function FollowUpPage() {
               return (
                 <article
                   key={followUp.id}
-                  className={`rounded-2xl border p-5 transition-all ${
+                  className={`min-w-0 overflow-hidden rounded-2xl border p-4 sm:p-5 transition-all ${
                     isOverdue
                       ? "border-rose-300 bg-rose-50/20 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/10"
                       : isDone
@@ -172,8 +172,8 @@ export function FollowUpPage() {
                       : "border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
                   }`}
                 >
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                    <div className="space-y-1">
+                  <div className="flex min-w-0 flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                    <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusPill>{followUp.status}</StatusPill>
                         {isOverdue && <StatusPill>Terlewat</StatusPill>}
@@ -182,7 +182,7 @@ export function FollowUpPage() {
                           Batas: <b>{formatDate(followUp.due_date)}</b>
                         </span>
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      <h3 className="break-words text-base font-bold text-slate-900 dark:text-white">
                         {followUp.problem}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -194,7 +194,7 @@ export function FollowUpPage() {
 
                     {isAdmin && (
                       <button
-                        className="shrink-0 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:from-emerald-700 hover:to-teal-800"
+                        className="shrink-0 rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-teal-800"
                         onClick={() =>
                           startDraft({
                             unit: supervision.unit,
@@ -239,10 +239,10 @@ export function FollowUpPage() {
                   {/* Admin Status Changer */}
                   {isAdmin && (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                        <span>Status RTL:</span>
+                      <label className="flex min-w-0 flex-wrap items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <span className="shrink-0">Status RTL:</span>
                         <select
-                          className={`${CONTROL} py-1.5 text-xs max-w-xs`}
+                          className={`${CONTROL} max-w-full py-1.5 text-xs sm:max-w-xs`}
                           disabled={busy}
                           value={followUp.status}
                           onChange={(event) => void updateFollowUpStatus(followUp.id, event.target.value)}

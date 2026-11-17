@@ -36,15 +36,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-50">
-      <div className="flex min-h-screen flex-col lg:flex-row">
+    <div className="min-h-screen overflow-x-clip bg-[#eef4f2] text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-50">
+      <div className="flex min-h-screen min-w-0 flex-col lg:flex-row">
         <Suspense fallback={<aside aria-hidden="true" className="hidden w-72 shrink-0 border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:block" />}>
           <SidebarNavbar />
         </Suspense>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-x-clip">
           <AppHeader />
           <main className="min-w-0 flex-1 pb-24 lg:pb-8">
-            <div className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8">
+            <div className="mx-auto w-full max-w-6xl min-w-0 p-4 sm:p-6 lg:p-8">
               {(error || (loading && !data.supervisions.length)) && error && (
                 <div role="alert" className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
                   <div><span>{error}</span>{!loading && !data.supervisions.length && <button className="ml-3 font-bold underline" onClick={() => void reload()}>Coba lagi</button>}</div>

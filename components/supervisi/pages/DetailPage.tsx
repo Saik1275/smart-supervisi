@@ -7,7 +7,7 @@ import { useSupervisi } from "../context";
 import { getSupabaseBrowserClient } from "../../../lib/supabase/browser";
 import { ITEMS, type AssessmentItem } from "../../../lib/instruments";
 import { calculateScore, formatDate } from "../../../lib/scoring";
-import { EmptyState, PANEL, ScoreSummary, StatusPill } from "../ui";
+import { CARD_SURFACE, EmptyState, PANEL, ScoreSummary, StatusPill } from "../ui";
 
 export function DetailPage({ id }: { id: string }) {
   const router = useRouter();
@@ -96,9 +96,9 @@ export function DetailPage({ id }: { id: string }) {
     return (
       <div
         key={item.id}
-        className="flex flex-col justify-between gap-2 border-b border-slate-100 py-3 last:border-0 sm:flex-row sm:items-center dark:border-slate-800"
+        className="flex min-w-0 flex-col justify-between gap-2 border-b border-slate-100 py-3 last:border-0 sm:flex-row sm:items-start dark:border-slate-800"
       >
-        <div className="space-y-0.5">
+        <div className="min-w-0 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-slate-900 dark:text-white">
               {item.title}
@@ -167,7 +167,7 @@ export function DetailPage({ id }: { id: string }) {
                     parent_id: detail.id,
                   })
                 }
-                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:from-emerald-500 hover:to-teal-500"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-teal-700 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-800"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -190,32 +190,32 @@ export function DetailPage({ id }: { id: string }) {
       </div>
 
       {/* Clinical Meta Card */}
-      <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:grid-cols-5 dark:border-slate-800 dark:bg-slate-900">
-        <div>
+      <div className={`${CARD_SURFACE} grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-5`}>
+        <div className="min-w-0">
           <span className="text-[11px] font-medium text-slate-400">SOP / Modul Supervisi</span>
-          <div className="mt-0.5 text-sm font-bold text-slate-900 dark:text-white">
+          <div className="mt-0.5 break-words text-sm font-bold text-slate-900 dark:text-white">
             {detail.module_title || "Tidak tersedia"}
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <span className="text-[11px] font-medium text-slate-400">Unit / Ruangan</span>
-          <div className="mt-0.5 text-sm font-bold text-slate-900 dark:text-white">
+          <div className="mt-0.5 break-words text-sm font-bold text-slate-900 dark:text-white">
             {detail.unit}
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <span className="text-[11px] font-medium text-slate-400">Perawat Dinilai</span>
-          <div className="mt-0.5 text-sm font-bold text-slate-900 dark:text-white">
+          <div className="mt-0.5 break-words text-sm font-bold text-slate-900 dark:text-white">
             {detail.nurse}
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <span className="text-[11px] font-medium text-slate-400">Supervisor</span>
-          <div className="mt-0.5 text-sm font-bold text-slate-900 dark:text-white">
+          <div className="mt-0.5 break-words text-sm font-bold text-slate-900 dark:text-white">
             {detail.supervisor || "Supervisor Keperawatan"}
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <span className="text-[11px] font-medium text-slate-400">Tanggal Observasi</span>
           <div className="mt-0.5 text-sm font-bold text-slate-900 dark:text-white">
             {formatDate(detail.date)}
@@ -231,7 +231,7 @@ export function DetailPage({ id }: { id: string }) {
 
       {/* Rincian Butir Penilaian Grouped */}
       <section className={`${PANEL} space-y-4`}>
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+        <div className="flex min-w-0 flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Rincian Lembar Observasi Tindakan
@@ -345,8 +345,8 @@ export function DetailPage({ id }: { id: string }) {
 
       {/* Umpan Balik Metode FAIR */}
       <section className={`${PANEL} space-y-3`}>
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
-          <div>
+        <div className="flex min-w-0 flex-col gap-2 border-b border-slate-100 pb-2 sm:flex-row sm:items-start sm:justify-between dark:border-slate-800">
+          <div className="min-w-0">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Umpan Balik Konstruktif (FAIR Feedback Model)
             </h3>
@@ -395,15 +395,14 @@ export function DetailPage({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Tanda Tangan Pengesahan (3 Pihak: Perawat, Supervisor, Kepala Ruangan) */}
-        {((detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.fair.signatureData) ||
-          (detail.fair.nurseSignatureName || detail.fair.nurseSignatureData) ||
+        {/* Tanda Tangan Pengesahan (Perawat dan Kepala Ruangan selaku penilai) */}
+        {((detail.fair.nurseSignatureName || detail.fair.nurseSignatureData) ||
           (detail.fair.headNurseSignatureName || detail.fair.headNurseSignatureData)) && (
           <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
             <p className="mb-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Pengesahan Lembar Supervisi &amp; Umpan Balik (3 Pihak)
+              Pengesahan Lembar Supervisi &amp; Umpan Balik (2 Pihak)
             </p>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {/* 1. Tanda Tangan Perawat yang Disupervisi */}
               <div className="flex flex-col items-center text-center">
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -435,43 +434,10 @@ export function DetailPage({ id }: { id: string }) {
                 <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Perawat Pelaksana</p>
               </div>
 
-              {/* 2. Tanda Tangan Supervisor Klinis */}
+              {/* 2. Tanda Tangan Kepala Ruangan selaku penilai */}
               <div className="flex flex-col items-center text-center">
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Supervisor Klinis
-                </p>
-                <div className="my-2 flex h-24 w-full items-center justify-center">
-                  {((detail.fair.supervisorSignatureMode ?? detail.fair.signatureMode) === "type" ||
-                    (!(detail.fair.supervisorSignatureData || detail.fair.signatureData) &&
-                      (detail.fair.supervisorSignatureName || detail.fair.signatureName))) ? (
-                    <span className="font-serif text-2xl italic text-slate-900 dark:text-white">
-                      {detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.supervisor}
-                    </span>
-                  ) : (detail.fair.supervisorSignatureData || detail.fair.signatureData) ? (
-                    <Image
-                      src={detail.fair.supervisorSignatureData || detail.fair.signatureData!}
-                      alt={`Tanda tangan ${detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.supervisor}`}
-                      width={400}
-                      height={120}
-                      unoptimized
-                      className="max-h-24 max-w-full object-contain"
-                    />
-                  ) : (
-                    <span className="text-xs italic text-slate-400">Belum ada tanda tangan</span>
-                  )}
-                </div>
-                <div className="w-48 border-b border-slate-400 pb-1 dark:border-slate-600">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">
-                    {detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.supervisor}
-                  </p>
-                </div>
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Supervisor Penilai</p>
-              </div>
-
-              {/* 3. Tanda Tangan Kepala Ruangan */}
-              <div className="flex flex-col items-center text-center">
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Kepala Ruangan (Karu)
+                  Kepala Ruangan (Karu) selaku Penilai
                 </p>
                 <div className="my-2 flex h-24 w-full items-center justify-center">
                   {(detail.fair.headNurseSignatureMode === "type" || (!detail.fair.headNurseSignatureData && detail.fair.headNurseSignatureName)) ? (
@@ -505,8 +471,8 @@ export function DetailPage({ id }: { id: string }) {
 
       {/* Rencana Tindak Lanjut (RTL) */}
       <section className={`${PANEL} space-y-3`}>
-        <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
-          <div>
+        <div className="flex min-w-0 flex-col gap-2 border-b border-slate-100 pb-2 sm:flex-row sm:items-start sm:justify-between dark:border-slate-800">
+          <div className="min-w-0">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
               Rencana Tindak Lanjut Terkait (RTL)
             </h3>
@@ -527,11 +493,13 @@ export function DetailPage({ id }: { id: string }) {
                 className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <h4 className="min-w-0 break-words text-xs font-bold text-slate-900 dark:text-white">
                       {row.problem}
                     </h4>
-                    <StatusPill>{row.status}</StatusPill>
+                    <div className="shrink-0">
+                      <StatusPill>{row.status}</StatusPill>
+                    </div>
                   </div>
                   {row.intervention && (
                     <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">

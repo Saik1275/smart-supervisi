@@ -10,7 +10,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
               }`}
           >
             SMART
-            <span className="text-emerald-700 dark:text-emerald-400">
+            <span className="text-teal-700 dark:text-teal-400">
               -SUPERVISI
             </span>
           </p>

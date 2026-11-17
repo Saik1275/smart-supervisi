@@ -20,7 +20,7 @@ export const instant = false;
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={`h-full antialiased ${inter.variable} font-sans`}>
-      <body className={`${inter.className} min-h-full font-sans bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50`}>
+      <body className={`${inter.className} min-h-full font-sans bg-[#eef4f2] text-slate-800 dark:bg-slate-950 dark:text-slate-50`}>
         <SupervisiProvider>
           <AppShell>{children}</AppShell>
         </SupervisiProvider>

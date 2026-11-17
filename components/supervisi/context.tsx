@@ -121,12 +121,6 @@ export type Draft = {
     I: string;
     R: string;
     review: string;
-    signatureMode?: "draw" | "type";
-    signatureData?: string;
-    signatureName?: string;
-    supervisorSignatureMode?: "draw" | "type";
-    supervisorSignatureData?: string;
-    supervisorSignatureName?: string;
     nurseSignatureMode?: "draw" | "type";
     nurseSignatureData?: string;
     nurseSignatureName?: string;
@@ -224,12 +218,6 @@ function emptyDraft(userName = ""): Draft {
       I: "",
       R: "",
       review: "",
-      signatureMode: "draw",
-      signatureData: "",
-      signatureName: userName,
-      supervisorSignatureMode: "draw",
-      supervisorSignatureData: "",
-      supervisorSignatureName: userName,
       nurseSignatureMode: "draw",
       nurseSignatureData: "",
       nurseSignatureName: "",
@@ -597,27 +585,21 @@ export function SupervisiProvider({ children }: { children: ReactNode }) {
       setStep(1);
       return;
     }
-    const supervisorName = (draft.fair.supervisorSignatureName?.trim() || draft.fair.signatureName?.trim() || draft.supervisor.trim());
-    const supervisorMode = draft.fair.supervisorSignatureMode || draft.fair.signatureMode || "draw";
-    const supervisorData = draft.fair.supervisorSignatureData || draft.fair.signatureData || "";
-    const isSupervisorValid = Boolean(supervisorName && (supervisorMode === "type" || supervisorData));
-
     const nurseName = draft.fair.nurseSignatureName?.trim();
     const nurseMode = draft.fair.nurseSignatureMode || "draw";
     const nurseData = draft.fair.nurseSignatureData || "";
     const isNurseValid = Boolean(nurseName && (nurseMode === "type" || nurseData));
 
-    const headNurseName = draft.fair.headNurseSignatureName?.trim();
+    const headNurseName = draft.supervisor.trim();
     const headNurseMode = draft.fair.headNurseSignatureMode || "draw";
     const headNurseData = draft.fair.headNurseSignatureData || "";
     const isHeadNurseValid = Boolean(headNurseName && (headNurseMode === "type" || headNurseData));
 
-    if (!isSupervisorValid || !isNurseValid || !isHeadNurseValid) {
+    if (!isNurseValid || !isHeadNurseValid) {
       const missingParties: string[] = [];
       if (!isNurseValid) missingParties.push("Perawat yang disupervisi");
-      if (!isSupervisorValid) missingParties.push("Supervisor");
-      if (!isHeadNurseValid) missingParties.push("Kepala Ruangan");
-      setError(`Lengkapi 3 tanda tangan (${missingParties.join(", ")}) pada tahap FAIR Feedback.`);
+      if (!isHeadNurseValid) missingParties.push("Kepala Ruangan selaku penilai");
+      setError(`Lengkapi 2 tanda tangan (${missingParties.join(", ")}) pada tahap FAIR Feedback.`);
       setStep(5);
       return;
     }
@@ -642,13 +624,11 @@ export function SupervisiProvider({ children }: { children: ReactNode }) {
         causes: draft.causes,
         interventions: draft.interventions,
         fair: {
-          ...draft.fair,
-          signatureName: supervisorName,
-          signatureMode: supervisorMode,
-          signatureData: supervisorData,
-          supervisorSignatureName: supervisorName,
-          supervisorSignatureMode: supervisorMode,
-          supervisorSignatureData: supervisorData,
+          F: draft.fair.F,
+          A: draft.fair.A,
+          I: draft.fair.I,
+          R: draft.fair.R,
+          review: draft.fair.review,
           nurseSignatureName: nurseName,
           nurseSignatureMode: nurseMode,
           nurseSignatureData: nurseData,

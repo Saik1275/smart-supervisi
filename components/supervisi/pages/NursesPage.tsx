@@ -5,7 +5,7 @@ import { getSupabaseBrowserClient } from "../../../lib/supabase/browser";
 import { calculateScore } from "../../../lib/scoring";
 import { ITEMS } from "../../../lib/instruments";
 import { useSupervisi } from "../context";
-import { BUTTON, CONTROL, EmptyState, PANEL, StatusPill } from "../ui";
+import { BUTTON, CARD_SURFACE, CONTROL, EmptyState, PANEL, StatusPill } from "../ui";
 
 export function NursesPage() {
   const { nurses, data, isAdmin, setError, setNotice, refreshData, startDraft, routerPush } =
@@ -239,7 +239,7 @@ export function NursesPage() {
             }}
             className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold shadow-sm transition ${showForm
               ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-              : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 hover:shadow"
+              : "bg-teal-700 text-white hover:bg-teal-800 hover:shadow"
               }`}
           >
             {showForm ? (
@@ -263,7 +263,7 @@ export function NursesPage() {
 
       {/* KPI Cards Row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className={`${CARD_SURFACE} p-4`}>
           <div className="text-xs font-medium text-slate-500">Total Tenaga Perawat</div>
           <div className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             {metrics.total}
@@ -271,7 +271,7 @@ export function NursesPage() {
           <div className="mt-1 text-[11px] text-slate-400">Dalam database klinis</div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className={`${CARD_SURFACE} p-4`}>
           <div className="text-xs font-medium text-slate-500">Perawat Aktif</div>
           <div className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
             {metrics.active}
@@ -279,7 +279,7 @@ export function NursesPage() {
           <div className="mt-1 text-[11px] text-slate-400">Siap untuk disupervisi</div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className={`${CARD_SURFACE} p-4`}>
           <div className="text-xs font-medium text-slate-500">Unit / Ruangan</div>
           <div className="mt-1 text-2xl font-bold tracking-tight text-teal-700 dark:text-teal-400">
             {metrics.unitsCount}
@@ -287,7 +287,7 @@ export function NursesPage() {
           <div className="mt-1 text-[11px] text-slate-400">Cakupan instalasi RS</div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className={`${CARD_SURFACE} p-4`}>
           <div className="text-xs font-medium text-slate-500">Supervisi Tuntas</div>
           <div className="mt-1 text-2xl font-bold tracking-tight text-teal-600 dark:text-teal-400">
             {metrics.totalSupervisions}
@@ -299,7 +299,7 @@ export function NursesPage() {
       {/* Form Tambah Perawat */}
       {isAdmin && showForm && (
         <form
-          className={`${PANEL} animate-in fade-in slide-in-from-top-3 duration-200 space-y-4 border-2 border-emerald-500/20`}
+          className={`${PANEL} animate-in fade-in slide-in-from-top-3 duration-200 space-y-4 border-emerald-300/70 dark:border-emerald-800/80`}
           onSubmit={(e) => void saveNurse(e)}
         >
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
@@ -472,19 +472,19 @@ export function NursesPage() {
             return (
               <div
                 key={nurse.id}
-                className={`relative flex flex-col justify-between rounded-2xl border p-4 shadow-sm transition hover:shadow-md ${nurse.active
+                className={`relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border p-4 shadow-sm transition hover:shadow-md ${nurse.active}
                   ? "border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900"
                   : "border-slate-200/50 bg-slate-50/70 opacity-75 dark:border-slate-800/60 dark:bg-slate-900/50"
                   }`}
               >
                 <div>
                   {/* Top: Avatar, Name, Unit, and Active Pill */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       {/* Avatar */}
                       <div
                         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-bold text-xs shadow-sm ${nurse.active
-                          ? "bg-gradient-to-tr from-emerald-600 to-teal-500 text-white"
+                          ? "bg-teal-700 text-white"
                           : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
                           }`}
                       >
@@ -532,7 +532,7 @@ export function NursesPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <div className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                   {isAdmin && (
                     <div className="flex items-center gap-3">
                       <button
@@ -603,9 +603,9 @@ export function NursesPage() {
       )}
 
       {/* Admin credentials note */}
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/60">
-        <span>🔐 Akun Administrator Sistem: <b>admin@supervisi.com</b></span>
-        <span className="text-[11px] text-slate-400">Hak Akses: Manajemen Perawat, Jadwal, &amp; Modul SOP</span>
+      <div className="flex flex-col gap-1 rounded-xl border border-teal-100 bg-white px-4 py-2.5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900/60">
+        <span>Akun administrator: <b>admin@supervisi.com</b></span>
+        <span className="text-[11px] text-slate-400">Hak akses: manajemen perawat, jadwal, &amp; modul SOP</span>
       </div>
     </div>
   );
