@@ -73,6 +73,35 @@ export async function uploadSopPdf(
   );
 }
 
+export type UpdateSopInput = {
+  title: string;
+  category: string;
+  description: string;
+  assessment_items: AssessmentItem[];
+};
+
+export async function updateSopDocument(
+  client: SupabaseClient,
+  id: string,
+  input: UpdateSopInput,
+): Promise<void> {
+  if (!input.title.trim() || !input.category.trim()) {
+    throw new Error("Judul dan kategori SPO wajib diisi.");
+  }
+  validateAssessmentItems(input.assessment_items);
+  const today = new Date().toISOString().split("T")[0];
+  const { error } = await client.from("sop_documents")
+    .update({
+      title: input.title.trim(),
+      category: input.category.trim(),
+      description: input.description.trim(),
+      assessment_items: input.assessment_items,
+      updated_on: today,
+    })
+    .eq("id", id);
+  if (error) throw new Error(`Perubahan dokumen SPO gagal disimpan: ${error.message}`);
+}
+
 export async function updateSopAssessmentItems(
   client: SupabaseClient,
   id: string,

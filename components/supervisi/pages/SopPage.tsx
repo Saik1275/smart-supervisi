@@ -11,6 +11,7 @@ import {
   isModuleDocument,
   toggleSopPublished,
   updateSopAssessmentItems,
+  updateSopDocument,
   uploadSopPdf,
 } from "../../../lib/supabase/sop-documents";
 import { getSupabaseBrowserClient } from "../../../lib/supabase/browser";
@@ -32,6 +33,8 @@ function AssessmentChecklistEditor({
   onConfirm,
   onEdit,
   disabled = false,
+  title = "Periksa checklist hasil ekstraksi SOP",
+  description = "Pastikan langkah hasil ekstraksi sesuai isi PDF. Edit, hapus, tambahkan langkah yang terlewat, dan tandai langkah kritis. PDF hasil scan tanpa teks perlu diisi manual.",
 }: {
   items: AssessmentItem[];
   onChange: (items: AssessmentItem[]) => void;
@@ -39,6 +42,8 @@ function AssessmentChecklistEditor({
   onConfirm: () => void;
   onEdit: () => void;
   disabled?: boolean;
+  title?: string;
+  description?: string;
 }) {
   function addItem() {
     if (items.length >= 50) return;
@@ -52,12 +57,21 @@ function AssessmentChecklistEditor({
     ]);
   }
 
+  function moveItem(index: number, direction: "up" | "down") {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+    const newItems = [...items];
+    const [removed] = newItems.splice(index, 1);
+    newItems.splice(targetIndex, 0, removed);
+    onChange(newItems);
+  }
+
   return (
     <section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
       <div>
-        <h4 className="text-sm font-bold text-slate-900 dark:text-white">Periksa checklist hasil ekstraksi SOP</h4>
+        <h4 className="text-sm font-bold text-slate-900 dark:text-white">{title}</h4>
         <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-          Pastikan langkah hasil ekstraksi sesuai isi PDF. Edit, hapus, tambahkan langkah yang terlewat, dan tandai langkah kritis. PDF hasil scan tanpa teks perlu diisi manual.
+          {description}
         </p>
       </div>
       {!items.length && (
@@ -68,7 +82,31 @@ function AssessmentChecklistEditor({
       <div className="space-y-2">
         {items.map((item, index) => (
           <div key={item.id} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900 sm:flex-row sm:items-start">
-            <span className="pt-2 text-xs font-bold text-slate-400">#{index + 1}</span>
+            <div className="flex shrink-0 items-center gap-1 sm:pt-2">
+              <span className="text-xs font-bold text-slate-400">#{index + 1}</span>
+              {!reviewed && (
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    disabled={disabled || index === 0}
+                    onClick={() => moveItem(index, "up")}
+                    className="rounded px-1 py-0 text-[10px] text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-20 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                    title="Geser langkah ke atas"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    disabled={disabled || index === items.length - 1}
+                    onClick={() => moveItem(index, "down")}
+                    className="rounded px-1 py-0 text-[10px] text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-20 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                    title="Geser langkah ke bawah"
+                  >
+                    ▼
+                  </button>
+                </div>
+              )}
+            </div>
             <textarea
               className={`${CONTROL} min-h-16 resize-y`}
               aria-label={`Langkah prosedur ${index + 1}`}
@@ -162,10 +200,16 @@ export function SopPage() {
   const [assessmentReviewed, setAssessmentReviewed] = useState(false);
   const [extractingAssessment, setExtractingAssessment] = useState(false);
   const [assessmentError, setAssessmentError] = useState("");
-  const [editingChecklistSop, setEditingChecklistSop] = useState<string | null>(null);
+  const [editingSopId, setEditingSopId] = useState<string | null>(null);
+  const [editingForm, setEditingForm] = useState({
+    title: "",
+    category: "Keperawatan Dasar",
+    description: "",
+  });
   const [editingChecklistItems, setEditingChecklistItems] = useState<AssessmentItem[]>([]);
   const [editingChecklistReviewed, setEditingChecklistReviewed] = useState(false);
   const [editingChecklistBusy, setEditingChecklistBusy] = useState(false);
+  const [viewingChecklistId, setViewingChecklistId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // PDF Viewer states
@@ -305,46 +349,105 @@ export function SopPage() {
     }
   }
 
-  async function prepareExistingChecklist(sop: Sop) {
-    if (!supabase || !isAdmin) return;
-    setEditingChecklistSop(sop.id);
+  function startEditingSop(sop: Sop) {
+    setEditingSopId(sop.id);
+    setEditingForm({
+      title: sop.title,
+      category: sop.category,
+      description: sop.description || "",
+    });
+    const items: AssessmentItem[] = Array.isArray(sop.assessment_items) && sop.assessment_items.length > 0
+      ? JSON.parse(JSON.stringify(sop.assessment_items))
+      : [];
+    setEditingChecklistItems(items);
+    setEditingChecklistReviewed(false);
+    setAssessmentError("");
+    if (viewingChecklistId === sop.id) {
+      setViewingChecklistId(null);
+    }
+  }
+
+  function cancelEditing() {
+    setEditingSopId(null);
+    setEditingForm({ title: "", category: "Keperawatan Dasar", description: "" });
     setEditingChecklistItems([]);
     setEditingChecklistReviewed(false);
+    setAssessmentError("");
+  }
+
+  async function saveEditedSop(sopId: string) {
+    if (!supabase || !isAdmin) return;
+    if (!editingForm.title.trim()) {
+      setError("Judul dokumen SPO/Modul wajib diisi.");
+      return;
+    }
+    if (!editingForm.category.trim()) {
+      setError("Kategori dokumen wajib diisi.");
+      return;
+    }
+    if (!editingChecklistItems.length) {
+      setError("Checklist SOP harus memiliki minimal 1 langkah prosedur.");
+      return;
+    }
+    if (editingChecklistItems.some((item) => !item.title.trim())) {
+      setError("Semua butir langkah prosedur harus memiliki uraian (tidak boleh kosong).");
+      return;
+    }
+    if (
+      editingChecklistItems.length > 50 ||
+      new Set(editingChecklistItems.map((item) => item.id)).size !== editingChecklistItems.length
+    ) {
+      setError("Checklist harus berisi maksimal 50 butir dengan ID unik.");
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    try {
+      await updateSopDocument(supabase, sopId, {
+        title: editingForm.title,
+        category: editingForm.category,
+        description: editingForm.description,
+        assessment_items: editingChecklistItems,
+      });
+      setEditingSopId(null);
+      setEditingChecklistReviewed(false);
+      await refreshData();
+      setNotice(`Dokumen dan isi langkah SPO "${editingForm.title}" berhasil diperbarui.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Gagal menyimpan perubahan SPO.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reExtractExistingSop(sop: Sop) {
+    if (!supabase || !isAdmin) return;
+    if (
+      editingChecklistItems.length > 0 &&
+      !window.confirm(
+        "Ekstraksi ulang akan membaca kembali teks dari berkas PDF asli dan menggantikan butir langkah saat ini. Lanjutkan?"
+      )
+    ) {
+      return;
+    }
+
     setEditingChecklistBusy(true);
     setAssessmentError("");
     try {
       const url = await getSopSignedUrl(supabase, sop.storage_path);
       const extracted = await extractSopProcedureItems(url);
       setEditingChecklistItems(extracted);
+      setEditingChecklistReviewed(false);
       if (!extracted.length) {
-        setAssessmentError("Tidak ada langkah yang dapat diekstrak. Jika PDF berupa scan, tambahkan butir secara manual.");
+        setAssessmentError(
+          "Tidak ada langkah yang dapat diekstrak dari PDF. Anda dapat menambahkan butir langkah secara manual."
+        );
       }
     } catch (reason) {
       setAssessmentError(reason instanceof Error ? reason.message : "Ekstraksi teks SOP gagal.");
     } finally {
       setEditingChecklistBusy(false);
-    }
-  }
-
-  async function saveExistingChecklist(sop: Sop) {
-    if (!supabase || !isAdmin) return;
-    if (!editingChecklistReviewed || !editingChecklistItems.length ||
-      editingChecklistItems.some((item) => !item.title.trim())) {
-      setError("Periksa dan setujui checklist SOP sebelum menyimpan.");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      await updateSopAssessmentItems(supabase, sop.id, editingChecklistItems);
-      setEditingChecklistSop(null);
-      setEditingChecklistReviewed(false);
-      await refreshData();
-      setNotice(`Checklist "${sop.title}" berhasil disimpan untuk supervisi berikutnya.`);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Checklist SOP gagal disimpan.");
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -370,6 +473,8 @@ export function SopPage() {
       await deleteSopPdf(supabase, sop.id, sop.storage_path);
       if (inlinePdfId === sop.id) setInlinePdfId(null);
       if (modalPdfUrl && modalPdfUrl.title === sop.title) setModalPdfUrl(null);
+      if (editingSopId === sop.id) cancelEditing();
+      if (viewingChecklistId === sop.id) setViewingChecklistId(null);
       await refreshData();
       setNotice("Dokumen SPO berhasil dihapus.");
     } catch (reason) {
@@ -623,7 +728,7 @@ export function SopPage() {
                 Mengekstrak langkah dari PDF di browser. Berkas belum diunggah ke server.
               </p>
             )}
-            {assessmentError && !editingChecklistSop && (
+            {assessmentError && !editingSopId && (
               <p className="sm:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
                 {assessmentError}
               </p>
@@ -810,6 +915,9 @@ export function SopPage() {
                             Disembunyikan (Draf Admin)
                           </span>
                         )}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700 border border-sky-200/60 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/40">
+                          {sop.assessment_items?.length ?? 0} Langkah SPO
+                        </span>
                         <span className="text-xs text-slate-500 dark:text-slate-400">
                           Diperbarui: {formatDate(sop.updated_on)}
                         </span>
@@ -850,19 +958,46 @@ export function SopPage() {
                         Layar Penuh
                       </button>
 
+                      {/* Toggle View Checklist */}
+                      <button
+                        className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                          viewingChecklistId === sop.id && editingSopId !== sop.id
+                            ? "bg-slate-900 text-white dark:bg-slate-700"
+                            : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+                        }`}
+                        onClick={() => {
+                          setViewingChecklistId(viewingChecklistId === sop.id ? null : sop.id);
+                        }}
+                        title="Lihat butir langkah prosedur checklist SPO"
+                      >
+                        {viewingChecklistId === sop.id && editingSopId !== sop.id
+                          ? "✕ Tutup Langkah"
+                          : `Lihat Langkah (${sop.assessment_items?.length ?? 0})`}
+                      </button>
+
                       {/* Admin Controls */}
                       {isAdmin && (
                         <div className="flex items-center gap-1 border-l border-slate-200 pl-2 dark:border-slate-700">
-                          {!sop.assessment_items.length && (
-                            <button
-                              className="rounded-xl px-2.5 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-                              disabled={busy || editingChecklistBusy}
-                              onClick={() => void prepareExistingChecklist(sop)}
-                              title="Ekstrak dan tinjau checklist SOP untuk supervisi"
-                            >
-                              Atur checklist
-                            </button>
-                          )}
+                          {/* Edit SPO Button */}
+                          <button
+                            className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                              editingSopId === sop.id
+                                ? "bg-emerald-600 text-white shadow-sm"
+                                : "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-950"
+                            }`}
+                            disabled={busy || editingChecklistBusy}
+                            onClick={() => {
+                              if (editingSopId === sop.id) {
+                                cancelEditing();
+                              } else {
+                                startEditingSop(sop);
+                              }
+                            }}
+                            title="Edit informasi dokumen dan isi langkah prosedur SPO"
+                          >
+                            {editingSopId === sop.id ? "✕ Batal Edit" : "✎ Edit Isi SPO"}
+                          </button>
+
                           {/* Toggle Publication Button */}
                           <button
                             className="rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -887,53 +1022,214 @@ export function SopPage() {
                     </div>
                   </div>
 
-                  {editingChecklistSop === sop.id && (
-                    <div className="mt-4 space-y-3">
-                      {editingChecklistBusy ? (
-                        <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
-                          Mengekstrak langkah dari SOP di browser. PDF tidak diunggah ulang.
-                        </p>
-                      ) : (
-                        <>
-                          {assessmentError && (
-                            <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-                              {assessmentError}
-                            </p>
-                          )}
-                          <AssessmentChecklistEditor
-                            items={editingChecklistItems}
-                            onChange={(items) => {
-                              setEditingChecklistItems(items);
-                              setEditingChecklistReviewed(false);
-                            }}
-                            reviewed={editingChecklistReviewed}
-                            onConfirm={() => setEditingChecklistReviewed(true)}
-                            onEdit={() => setEditingChecklistReviewed(false)}
-                          />
-                          <div className="flex justify-end gap-2">
+                  {/* Read-only Steps Viewer */}
+                  {viewingChecklistId === sop.id && editingSopId !== sop.id && (
+                    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 dark:border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-slate-900 dark:text-white">
+                            Isi Butir Langkah Prosedur SPO
+                          </span>
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            {sop.assessment_items?.length ?? 0} Langkah
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isAdmin && (
                             <button
                               type="button"
-                              className={SECONDARY}
-                              disabled={busy}
                               onClick={() => {
-                                setEditingChecklistSop(null);
-                                setEditingChecklistReviewed(false);
-                                setAssessmentError("");
+                                setViewingChecklistId(null);
+                                startEditingSop(sop);
                               }}
+                              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline dark:text-emerald-400"
                             >
-                              Batal
+                              ✎ Edit Isi Langkah
                             </button>
-                            <button
-                              type="button"
-                              className={BUTTON}
-                              disabled={busy || !editingChecklistReviewed || !editingChecklistItems.length}
-                              onClick={() => void saveExistingChecklist(sop)}
-                            >
-                              {busy ? "Menyimpan…" : "Simpan checklist SOP"}
-                            </button>
-                          </div>
-                        </>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setViewingChecklistId(null)}
+                            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                      {(!sop.assessment_items || sop.assessment_items.length === 0) ? (
+                        <p className="mt-3 text-xs text-slate-500">Belum ada langkah checklist yang tersimpan untuk dokumen ini.</p>
+                      ) : (
+                        <ol className="mt-3 space-y-2 text-xs">
+                          {sop.assessment_items.map((item, idx) => (
+                            <li key={item.id} className="flex items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-800/50">
+                              <span className="pt-0.5 font-bold text-slate-400">#{idx + 1}</span>
+                              <span className="flex-1 leading-relaxed text-slate-800 dark:text-slate-200">{item.title}</span>
+                              {item.critical && (
+                                <span className="shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+                                  Kritis
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ol>
                       )}
+                    </div>
+                  )}
+
+                  {/* Edit SPO Form */}
+                  {editingSopId === sop.id && (
+                    <div className="mt-4 space-y-4 rounded-2xl border-2 border-emerald-500/30 bg-emerald-50/20 p-4 shadow-md sm:p-5 dark:border-emerald-500/30 dark:bg-slate-900/90">
+                      <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 dark:border-slate-700">
+                        <div>
+                          <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                            Edit Informasi &amp; Isi SPO
+                          </h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Ubah judul, kategori, deskripsi, serta tambah atau sesuaikan butir langkah checklist prosedur SPO.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold"
+                          onClick={cancelEditing}
+                          disabled={busy || editingChecklistBusy}
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Metadata Fields */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Judul Dokumen SPO / Modul <span className="text-rose-500">*</span>
+                            <input
+                              className={`${CONTROL} mt-1`}
+                              value={editingForm.title}
+                              onChange={(e) => setEditingForm({ ...editingForm, title: e.target.value })}
+                              placeholder="Judul dokumen..."
+                              required
+                              disabled={busy || editingChecklistBusy}
+                            />
+                          </label>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Kategori Dokumen <span className="text-rose-500">*</span>
+                            <input
+                              className={`${CONTROL} mt-1`}
+                              value={editingForm.category}
+                              onChange={(e) => setEditingForm({ ...editingForm, category: e.target.value })}
+                              placeholder="Kategori dokumen..."
+                              required
+                              disabled={busy || editingChecklistBusy}
+                            />
+                          </label>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {CATEGORY_PRESETS.map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                disabled={busy || editingChecklistBusy}
+                                onClick={() => setEditingForm({ ...editingForm, category: preset })}
+                                className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                              >
+                                {preset}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Deskripsi Singkat / Catatan Versi (Opsional)
+                            <textarea
+                              className={`${CONTROL} mt-1 min-h-16`}
+                              value={editingForm.description}
+                              onChange={(e) => setEditingForm({ ...editingForm, description: e.target.value })}
+                              placeholder="Jelaskan ringkasan prosedur atau catatan pembaruan isi SPO..."
+                              disabled={busy || editingChecklistBusy}
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Checklist Editor Section */}
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h5 className="text-xs font-bold text-slate-900 dark:text-white">
+                              Isi Butir Langkah Prosedur SPO ({editingChecklistItems.length} langkah)
+                            </h5>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                              Anda dapat menambah langkah baru, mengedit uraian langkah, mengatur urutan (▲/▼), menghapus langkah, atau menandai langkah kritis seperti saat pertama kali mengunggah SPO.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={busy || editingChecklistBusy}
+                            onClick={() => void reExtractExistingSop(sop)}
+                            className="rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300"
+                            title="Baca ulang teks dari berkas PDF asli di penyimpanan"
+                          >
+                            {editingChecklistBusy ? "Mengekstrak…" : "↻ Ekstrak Ulang dari PDF"}
+                          </button>
+                        </div>
+
+                        {editingChecklistBusy && (
+                          <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
+                            Sedang membaca dan mengekstrak langkah dari berkas PDF di browser...
+                          </p>
+                        )}
+
+                        {assessmentError && (
+                          <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                            {assessmentError}
+                          </p>
+                        )}
+
+                        <AssessmentChecklistEditor
+                          items={editingChecklistItems}
+                          onChange={(items) => {
+                            setEditingChecklistItems(items);
+                            setEditingChecklistReviewed(false);
+                          }}
+                          reviewed={editingChecklistReviewed}
+                          onConfirm={() => setEditingChecklistReviewed(true)}
+                          onEdit={() => setEditingChecklistReviewed(false)}
+                          disabled={busy || editingChecklistBusy}
+                          title="Checklist Langkah Prosedur SOP"
+                          description="Periksa dan sesuaikan setiap butir langkah. Anda dapat menambahkan butir baru jika ada isi SPO yang bertambah."
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200/80 pt-3 dark:border-slate-700">
+                        <button
+                          type="button"
+                          className={SECONDARY}
+                          disabled={busy || editingChecklistBusy}
+                          onClick={cancelEditing}
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          className={BUTTON}
+                          disabled={
+                            busy ||
+                            editingChecklistBusy ||
+                            !editingForm.title.trim() ||
+                            !editingForm.category.trim() ||
+                            !editingChecklistItems.length ||
+                            editingChecklistItems.some((item) => !item.title.trim())
+                          }
+                          onClick={() => void saveEditedSop(sop.id)}
+                        >
+                          {busy ? "Menyimpan…" : "Simpan Perubahan SPO"}
+                        </button>
+                      </div>
                     </div>
                   )}
 

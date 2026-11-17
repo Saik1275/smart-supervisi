@@ -135,15 +135,45 @@ function DigitalSignature({
   );
 }
 
-function hasDigitalSignature(fair: {
-  signatureMode?: "draw" | "type";
-  signatureData?: string;
-  signatureName?: string;
-}) {
-  return Boolean(
-    fair.signatureName?.trim() &&
-    (fair.signatureMode === "type" || fair.signatureData)
-  );
+function hasDigitalSignatures(
+  fair: {
+    signatureMode?: "draw" | "type";
+    signatureData?: string;
+    signatureName?: string;
+    supervisorSignatureMode?: "draw" | "type";
+    supervisorSignatureData?: string;
+    supervisorSignatureName?: string;
+    nurseSignatureMode?: "draw" | "type";
+    nurseSignatureData?: string;
+    nurseSignatureName?: string;
+    headNurseSignatureMode?: "draw" | "type";
+    headNurseSignatureData?: string;
+    headNurseSignatureName?: string;
+  },
+  defaultSupervisor = "",
+  defaultNurse = "",
+) {
+  const supName = fair.supervisorSignatureName?.trim() || fair.signatureName?.trim() || defaultSupervisor.trim();
+  const supMode = fair.supervisorSignatureMode || fair.signatureMode || "draw";
+  const supData = fair.supervisorSignatureData || fair.signatureData;
+  const isSupervisorSigned = Boolean(supName && (supMode === "type" || supData));
+
+  const nName = fair.nurseSignatureName?.trim() || defaultNurse.trim();
+  const nMode = fair.nurseSignatureMode || "draw";
+  const nData = fair.nurseSignatureData;
+  const isNurseSigned = Boolean(nName && (nMode === "type" || nData));
+
+  const headName = fair.headNurseSignatureName?.trim();
+  const headMode = fair.headNurseSignatureMode || "draw";
+  const headData = fair.headNurseSignatureData;
+  const isHeadNurseSigned = Boolean(headName && (headMode === "type" || headData));
+
+  const isValid = isSupervisorSigned && isNurseSigned && isHeadNurseSigned;
+  return { isSupervisorSigned, isNurseSigned, isHeadNurseSigned, isValid };
+}
+
+function hasDigitalSignature(fair: Parameters<typeof hasDigitalSignatures>[0]) {
+  return hasDigitalSignatures(fair).isValid;
 }
 
 export function SupervisionPage() {
@@ -269,6 +299,7 @@ export function SupervisionPage() {
   const score = calculateScore(draft.scores, draft.assessment_items);
   const modules = data.sops.filter((sop) => sop.assessment_items.length > 0);
   const selectedModule = modules.find((module) => module.id === draft.module_id);
+  const selectedNurse = nurses.find((nurse) => nurse.id === draft.nurse_id);
   const steps = [
     { label: "Informasi", num: 1 },
     { label: "Observasi & Scoring", num: 2 },
@@ -398,8 +429,30 @@ export function SupervisionPage() {
                   className={`${CONTROL} mt-1.5`}
                   value={draft.supervisor}
                   placeholder="Nama lengkap supervisor klinis"
-                  onChange={(event) => text("supervisor", event.target.value)}
+                  onChange={(event) => {
+                    text("supervisor", event.target.value);
+                    updateDraft("fair", {
+                      ...draft.fair,
+                      supervisorSignatureName: event.target.value,
+                      signatureName: event.target.value,
+                    });
+                  }}
                   required
+                />
+              </label>
+
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Nama Kepala Ruangan (Karu)
+                <input
+                  className={`${CONTROL} mt-1.5`}
+                  value={draft.fair.headNurseSignatureName ?? ""}
+                  placeholder="Nama Kepala Ruangan unit terkait"
+                  onChange={(event) =>
+                    updateDraft("fair", {
+                      ...draft.fair,
+                      headNurseSignatureName: event.target.value,
+                    })
+                  }
                 />
               </label>
 
@@ -411,7 +464,13 @@ export function SupervisionPage() {
                   onChange={(event) => {
                     const selected = nurses.find((nurse) => nurse.id === event.target.value);
                     text("nurse_id", event.target.value);
-                    if (selected) updateDraft("unit", selected.unit);
+                    if (selected) {
+                      updateDraft("unit", selected.unit);
+                      updateDraft("fair", {
+                        ...draft.fair,
+                        nurseSignatureName: selected.full_name,
+                      });
+                    }
                   }}
                   required
                 >
@@ -819,60 +878,250 @@ export function SupervisionPage() {
                 />
               </label>
 
-              <section className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tanda Tangan Digital</h3>
+              <div className="space-y-4">
+                <div className="border-b border-slate-200/80 pb-2 dark:border-slate-800">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Tanda Tangan Pengesahan (3 Pihak)
+                  </h3>
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Tanda tangan disimpan bersama lembar supervisi dan ikut tampil pada hasil cetak/PDF.
+                    Tanda tangan digital oleh Perawat yang disupervisi, Supervisor Klinis, dan Kepala Ruangan sebagai bukti kesepakatan observasi dan umpan balik model FAIR.
                   </p>
                 </div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Nama penanda tangan
-                  <input
-                    className={`${CONTROL} mt-1.5`}
-                    value={draft.fair.signatureName ?? ""}
-                    onChange={(event) =>
-                      updateDraft("fair", { ...draft.fair, signatureName: event.target.value })
-                    }
-                    placeholder="Masukkan nama penanda tangan"
-                    required
-                  />
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className={draft.fair.signatureMode !== "type" ? BUTTON : SECONDARY}
-                    onClick={() =>
-                      updateDraft("fair", { ...draft.fair, signatureMode: "draw" })
-                    }
-                  >
-                    Gambar tanda tangan
-                  </button>
-                  <button
-                    type="button"
-                    className={draft.fair.signatureMode === "type" ? BUTTON : SECONDARY}
-                    onClick={() =>
-                      updateDraft("fair", { ...draft.fair, signatureMode: "type" })
-                    }
-                  >
-                    Ketik tanda tangan
-                  </button>
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {/* 1. Tanda Tangan Perawat yang Disupervisi */}
+                  <section className="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/40">
+                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 dark:border-slate-700/60">
+                      <div>
+                        <span className="inline-block rounded-md bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-800 dark:bg-sky-950 dark:text-sky-300">
+                          Pihak 1: Yang Dinilai
+                        </span>
+                        <h4 className="mt-1 text-xs font-bold text-slate-900 dark:text-white">
+                          Perawat yang Disupervisi
+                        </h4>
+                      </div>
+                      <span className="text-[11px] text-slate-400">Perawat Pelaksana</span>
+                    </div>
+
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Nama Perawat <span className="text-rose-500">*</span>
+                      <input
+                        className={`${CONTROL} mt-1.5`}
+                        value={draft.fair.nurseSignatureName ?? selectedNurse?.full_name ?? ""}
+                        onChange={(event) =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            nurseSignatureName: event.target.value,
+                          })
+                        }
+                        placeholder="Nama Perawat yang Disupervisi"
+                        required
+                      />
+                    </label>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        className={(draft.fair.nurseSignatureMode ?? "draw") !== "type" ? BUTTON : SECONDARY}
+                        onClick={() =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            nurseSignatureMode: "draw",
+                          })
+                        }
+                      >
+                        Gambar tanda tangan
+                      </button>
+                      <button
+                        type="button"
+                        className={draft.fair.nurseSignatureMode === "type" ? BUTTON : SECONDARY}
+                        onClick={() =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            nurseSignatureMode: "type",
+                          })
+                        }
+                      >
+                        Ketik tanda tangan
+                      </button>
+                    </div>
+
+                    {draft.fair.nurseSignatureMode === "type" ? (
+                      <div className="flex min-h-36 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-600">
+                        <span className="font-serif text-2xl italic text-slate-900 dark:text-slate-900">
+                          {draft.fair.nurseSignatureName || selectedNurse?.full_name || "Nama Perawat"}
+                        </span>
+                      </div>
+                    ) : (
+                      <DigitalSignature
+                        value={draft.fair.nurseSignatureData ?? ""}
+                        onChange={(signatureData) =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            nurseSignatureData: signatureData,
+                          })
+                        }
+                      />
+                    )}
+                  </section>
+
+                  {/* 2. Tanda Tangan Supervisor Klinis */}
+                  <section className="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/40">
+                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 dark:border-slate-700/60">
+                      <div>
+                        <span className="inline-block rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                          Pihak 2: Penilai
+                        </span>
+                        <h4 className="mt-1 text-xs font-bold text-slate-900 dark:text-white">
+                          Supervisor Klinis
+                        </h4>
+                      </div>
+                      <span className="text-[11px] text-slate-400">Supervisor Penilai</span>
+                    </div>
+
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Nama Supervisor <span className="text-rose-500">*</span>
+                      <input
+                        className={`${CONTROL} mt-1.5`}
+                        value={draft.fair.supervisorSignatureName ?? draft.fair.signatureName ?? draft.supervisor ?? ""}
+                        onChange={(event) =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            supervisorSignatureName: event.target.value,
+                            signatureName: event.target.value,
+                          })
+                        }
+                        placeholder="Nama Supervisor Klinis"
+                        required
+                      />
+                    </label>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        className={(draft.fair.supervisorSignatureMode || draft.fair.signatureMode) !== "type" ? BUTTON : SECONDARY}
+                        onClick={() =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            supervisorSignatureMode: "draw",
+                            signatureMode: "draw",
+                          })
+                        }
+                      >
+                        Gambar tanda tangan
+                      </button>
+                      <button
+                        type="button"
+                        className={(draft.fair.supervisorSignatureMode || draft.fair.signatureMode) === "type" ? BUTTON : SECONDARY}
+                        onClick={() =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            supervisorSignatureMode: "type",
+                            signatureMode: "type",
+                          })
+                        }
+                      >
+                        Ketik tanda tangan
+                      </button>
+                    </div>
+
+                    {(draft.fair.supervisorSignatureMode || draft.fair.signatureMode) === "type" ? (
+                      <div className="flex min-h-36 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-600">
+                        <span className="font-serif text-2xl italic text-slate-900 dark:text-slate-900">
+                          {draft.fair.supervisorSignatureName || draft.fair.signatureName || draft.supervisor || "Nama Supervisor"}
+                        </span>
+                      </div>
+                    ) : (
+                      <DigitalSignature
+                        value={draft.fair.supervisorSignatureData || draft.fair.signatureData || ""}
+                        onChange={(signatureData) =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            supervisorSignatureData: signatureData,
+                            signatureData,
+                          })
+                        }
+                      />
+                    )}
+                  </section>
+
+                  {/* 3. Tanda Tangan Kepala Ruangan (Karu) */}
+                  <section className="flex flex-col justify-between space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800/40 md:col-span-2 lg:col-span-1">
+                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 dark:border-slate-700/60">
+                      <div>
+                        <span className="inline-block rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                          Pihak 3: Mengetahui
+                        </span>
+                        <h4 className="mt-1 text-xs font-bold text-slate-900 dark:text-white">
+                          Kepala Ruangan (Karu)
+                        </h4>
+                      </div>
+                      <span className="text-[11px] text-slate-400">Kepala Unit</span>
+                    </div>
+
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Nama Kepala Ruangan <span className="text-rose-500">*</span>
+                      <input
+                        className={`${CONTROL} mt-1.5`}
+                        value={draft.fair.headNurseSignatureName ?? ""}
+                        onChange={(event) =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            headNurseSignatureName: event.target.value,
+                          })
+                        }
+                        placeholder="Nama Kepala Ruangan"
+                        required
+                      />
+                    </label>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        className={(draft.fair.headNurseSignatureMode ?? "draw") !== "type" ? BUTTON : SECONDARY}
+                        onClick={() =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            headNurseSignatureMode: "draw",
+                          })
+                        }
+                      >
+                        Gambar tanda tangan
+                      </button>
+                      <button
+                        type="button"
+                        className={draft.fair.headNurseSignatureMode === "type" ? BUTTON : SECONDARY}
+                        onClick={() =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            headNurseSignatureMode: "type",
+                          })
+                        }
+                      >
+                        Ketik tanda tangan
+                      </button>
+                    </div>
+
+                    {draft.fair.headNurseSignatureMode === "type" ? (
+                      <div className="flex min-h-36 items-center justify-center rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-600">
+                        <span className="font-serif text-2xl italic text-slate-900 dark:text-slate-900">
+                          {draft.fair.headNurseSignatureName || "Nama Kepala Ruangan"}
+                        </span>
+                      </div>
+                    ) : (
+                      <DigitalSignature
+                        value={draft.fair.headNurseSignatureData ?? ""}
+                        onChange={(signatureData) =>
+                          updateDraft("fair", {
+                            ...draft.fair,
+                            headNurseSignatureData: signatureData,
+                          })
+                        }
+                      />
+                    )}
+                  </section>
                 </div>
-                {draft.fair.signatureMode === "type" ? (
-                  <div className="flex min-h-36 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 dark:border-slate-600">
-                    <span className="font-serif text-3xl italic text-slate-900 dark:text-slate-900">
-                      {draft.fair.signatureName || "Nama penanda tangan"}
-                    </span>
-                  </div>
-                ) : (
-                  <DigitalSignature
-                    value={draft.fair.signatureData ?? ""}
-                    onChange={(signatureData) =>
-                      updateDraft("fair", { ...draft.fair, signatureData })
-                    }
-                  />
-                )}
-              </section>
+              </div>
             </div>
           </div>
         )}
@@ -1044,9 +1293,16 @@ export function SupervisionPage() {
                   setError(`Terdapat ${score.missing.length} butir observasi yang belum dinilai. Selesaikan butir observasi terlebih dahulu.`);
                   return;
                 }
-                if (step === 5 && !hasDigitalSignature(draft.fair)) {
-                  setError("Isi nama penanda tangan dan gambar atau ketik tanda tangan sebelum melanjutkan.");
-                  return;
+                if (step === 5) {
+                  const sigStatus = hasDigitalSignatures(draft.fair, draft.supervisor, selectedNurse?.full_name);
+                  if (!sigStatus.isValid) {
+                    const missingParties: string[] = [];
+                    if (!sigStatus.isNurseSigned) missingParties.push("Perawat yang disupervisi");
+                    if (!sigStatus.isSupervisorSigned) missingParties.push("Supervisor Klinis");
+                    if (!sigStatus.isHeadNurseSigned) missingParties.push("Kepala Ruangan");
+                    setError(`Lengkapi 3 tanda tangan (${missingParties.join(", ")}) sebelum melanjutkan.`);
+                    return;
+                  }
                 }
                 setError("");
                 setStep(step + 1);

@@ -395,28 +395,110 @@ export function DetailPage({ id }: { id: string }) {
           </div>
         </div>
 
-        {(detail.fair.signatureName || detail.fair.signatureData) && (
-          <div className="ml-auto mt-5 w-full max-w-xs border-t border-slate-300 pt-3 text-center">
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Tanda Tangan</p>
-            <div className="flex h-24 items-center justify-center">
-              {detail.fair.signatureMode === "type" ? (
-                <span className="font-serif text-2xl italic text-slate-900 dark:text-white">
-                  {detail.fair.signatureName}
-                </span>
-              ) : detail.fair.signatureData ? (
-                <Image
-                  src={detail.fair.signatureData}
-                  alt={`Tanda tangan ${detail.fair.signatureName ?? ""}`}
-                  width={600}
-                  height={150}
-                  unoptimized
-                  className="max-h-24 max-w-full object-contain"
-                />
-              ) : null}
-            </div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">
-              {detail.fair.signatureName}
+        {/* Tanda Tangan Pengesahan (3 Pihak: Perawat, Supervisor, Kepala Ruangan) */}
+        {((detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.fair.signatureData) ||
+          (detail.fair.nurseSignatureName || detail.fair.nurseSignatureData) ||
+          (detail.fair.headNurseSignatureName || detail.fair.headNurseSignatureData)) && (
+          <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
+            <p className="mb-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Pengesahan Lembar Supervisi &amp; Umpan Balik (3 Pihak)
             </p>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+              {/* 1. Tanda Tangan Perawat yang Disupervisi */}
+              <div className="flex flex-col items-center text-center">
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Perawat yang Disupervisi
+                </p>
+                <div className="my-2 flex h-24 w-full items-center justify-center">
+                  {(detail.fair.nurseSignatureMode === "type" || (!detail.fair.nurseSignatureData && detail.fair.nurseSignatureName)) ? (
+                    <span className="font-serif text-2xl italic text-slate-900 dark:text-white">
+                      {detail.fair.nurseSignatureName || detail.nurse}
+                    </span>
+                  ) : detail.fair.nurseSignatureData ? (
+                    <Image
+                      src={detail.fair.nurseSignatureData}
+                      alt={`Tanda tangan perawat ${detail.fair.nurseSignatureName || detail.nurse}`}
+                      width={400}
+                      height={120}
+                      unoptimized
+                      className="max-h-24 max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs italic text-slate-400">Belum ada tanda tangan</span>
+                  )}
+                </div>
+                <div className="w-48 border-b border-slate-400 pb-1 dark:border-slate-600">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {detail.fair.nurseSignatureName || detail.nurse}
+                  </p>
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Perawat Pelaksana</p>
+              </div>
+
+              {/* 2. Tanda Tangan Supervisor Klinis */}
+              <div className="flex flex-col items-center text-center">
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Supervisor Klinis
+                </p>
+                <div className="my-2 flex h-24 w-full items-center justify-center">
+                  {((detail.fair.supervisorSignatureMode ?? detail.fair.signatureMode) === "type" ||
+                    (!(detail.fair.supervisorSignatureData || detail.fair.signatureData) &&
+                      (detail.fair.supervisorSignatureName || detail.fair.signatureName))) ? (
+                    <span className="font-serif text-2xl italic text-slate-900 dark:text-white">
+                      {detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.supervisor}
+                    </span>
+                  ) : (detail.fair.supervisorSignatureData || detail.fair.signatureData) ? (
+                    <Image
+                      src={detail.fair.supervisorSignatureData || detail.fair.signatureData!}
+                      alt={`Tanda tangan ${detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.supervisor}`}
+                      width={400}
+                      height={120}
+                      unoptimized
+                      className="max-h-24 max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs italic text-slate-400">Belum ada tanda tangan</span>
+                  )}
+                </div>
+                <div className="w-48 border-b border-slate-400 pb-1 dark:border-slate-600">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {detail.fair.supervisorSignatureName || detail.fair.signatureName || detail.supervisor}
+                  </p>
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Supervisor Penilai</p>
+              </div>
+
+              {/* 3. Tanda Tangan Kepala Ruangan */}
+              <div className="flex flex-col items-center text-center">
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Kepala Ruangan (Karu)
+                </p>
+                <div className="my-2 flex h-24 w-full items-center justify-center">
+                  {(detail.fair.headNurseSignatureMode === "type" || (!detail.fair.headNurseSignatureData && detail.fair.headNurseSignatureName)) ? (
+                    <span className="font-serif text-2xl italic text-slate-900 dark:text-white">
+                      {detail.fair.headNurseSignatureName || "Kepala Ruangan"}
+                    </span>
+                  ) : detail.fair.headNurseSignatureData ? (
+                    <Image
+                      src={detail.fair.headNurseSignatureData}
+                      alt={`Tanda tangan kepala ruangan ${detail.fair.headNurseSignatureName ?? ""}`}
+                      width={400}
+                      height={120}
+                      unoptimized
+                      className="max-h-24 max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs italic text-slate-400">Belum ada tanda tangan</span>
+                  )}
+                </div>
+                <div className="w-48 border-b border-slate-400 pb-1 dark:border-slate-600">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {detail.fair.headNurseSignatureName || "Kepala Ruangan"}
+                  </p>
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Kepala Ruangan Rawat</p>
+              </div>
+            </div>
           </div>
         )}
       </section>

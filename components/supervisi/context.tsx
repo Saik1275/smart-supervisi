@@ -64,6 +64,15 @@ export type Supervision = {
     signatureMode?: "draw" | "type";
     signatureData?: string;
     signatureName?: string;
+    supervisorSignatureMode?: "draw" | "type";
+    supervisorSignatureData?: string;
+    supervisorSignatureName?: string;
+    nurseSignatureMode?: "draw" | "type";
+    nurseSignatureData?: string;
+    nurseSignatureName?: string;
+    headNurseSignatureMode?: "draw" | "type";
+    headNurseSignatureData?: string;
+    headNurseSignatureName?: string;
   };
   scores: Scores;
   follow_ups: FollowUp[];
@@ -115,6 +124,15 @@ export type Draft = {
     signatureMode?: "draw" | "type";
     signatureData?: string;
     signatureName?: string;
+    supervisorSignatureMode?: "draw" | "type";
+    supervisorSignatureData?: string;
+    supervisorSignatureName?: string;
+    nurseSignatureMode?: "draw" | "type";
+    nurseSignatureData?: string;
+    nurseSignatureName?: string;
+    headNurseSignatureMode?: "draw" | "type";
+    headNurseSignatureData?: string;
+    headNurseSignatureName?: string;
   };
   follow_ups: RtlDraft[];
 };
@@ -200,7 +218,25 @@ function emptyDraft(userName = ""): Draft {
     conclusion: { ok: "", masalah: "", risiko: "" },
     causes: Object.fromEntries(FACTORS.map((factor) => [factor, { on: false, note: "" }])),
     interventions: [],
-    fair: { F: "", A: "", I: "", R: "", review: "", signatureMode: "draw", signatureData: "", signatureName: userName },
+    fair: {
+      F: "",
+      A: "",
+      I: "",
+      R: "",
+      review: "",
+      signatureMode: "draw",
+      signatureData: "",
+      signatureName: userName,
+      supervisorSignatureMode: "draw",
+      supervisorSignatureData: "",
+      supervisorSignatureName: userName,
+      nurseSignatureMode: "draw",
+      nurseSignatureData: "",
+      nurseSignatureName: "",
+      headNurseSignatureMode: "draw",
+      headNurseSignatureData: "",
+      headNurseSignatureName: "",
+    },
     follow_ups: [],
   };
 }
@@ -518,6 +554,7 @@ export function SupervisiProvider({ children }: { children: ReactNode }) {
     const findingText = score.findings.map((item) => `${item.title.toLocaleLowerCase("id-ID")} (skor ${draft.scores[item.id]})`).join("; ");
     const days = dueDays(score.priority);
     updateDraft("fair", {
+      ...draft.fair,
       F: score.findings.length ? `Saat observasi tindakan ditemukan: ${findingText}.` : "Seluruh tahapan tindakan sesuai SPO.",
       A: score.findings.length ? `Temuan meningkatkan risiko keselamatan pasien (prioritas: ${score.priority}).${causeText ? ` Kontribusi faktor: ${causeText}.` : ""}` : "Praktik klinis aman.",
       I: draft.interventions.length ? `Perbaikan disepakati: ${draft.interventions.join(", ")}.` : "Pertahankan standar pelayanan.",
@@ -560,11 +597,27 @@ export function SupervisiProvider({ children }: { children: ReactNode }) {
       setStep(1);
       return;
     }
-    if (
-      !draft.fair.signatureName?.trim() ||
-      (draft.fair.signatureMode === "type" ? false : !draft.fair.signatureData)
-    ) {
-      setError("Isi nama penanda tangan dan gambar atau ketik tanda tangan pada tahap FAIR Feedback.");
+    const supervisorName = (draft.fair.supervisorSignatureName?.trim() || draft.fair.signatureName?.trim() || draft.supervisor.trim());
+    const supervisorMode = draft.fair.supervisorSignatureMode || draft.fair.signatureMode || "draw";
+    const supervisorData = draft.fair.supervisorSignatureData || draft.fair.signatureData || "";
+    const isSupervisorValid = Boolean(supervisorName && (supervisorMode === "type" || supervisorData));
+
+    const nurseName = draft.fair.nurseSignatureName?.trim();
+    const nurseMode = draft.fair.nurseSignatureMode || "draw";
+    const nurseData = draft.fair.nurseSignatureData || "";
+    const isNurseValid = Boolean(nurseName && (nurseMode === "type" || nurseData));
+
+    const headNurseName = draft.fair.headNurseSignatureName?.trim();
+    const headNurseMode = draft.fair.headNurseSignatureMode || "draw";
+    const headNurseData = draft.fair.headNurseSignatureData || "";
+    const isHeadNurseValid = Boolean(headNurseName && (headNurseMode === "type" || headNurseData));
+
+    if (!isSupervisorValid || !isNurseValid || !isHeadNurseValid) {
+      const missingParties: string[] = [];
+      if (!isNurseValid) missingParties.push("Perawat yang disupervisi");
+      if (!isSupervisorValid) missingParties.push("Supervisor");
+      if (!isHeadNurseValid) missingParties.push("Kepala Ruangan");
+      setError(`Lengkapi 3 tanda tangan (${missingParties.join(", ")}) pada tahap FAIR Feedback.`);
       setStep(5);
       return;
     }
@@ -588,7 +641,21 @@ export function SupervisiProvider({ children }: { children: ReactNode }) {
         conclusion: draft.conclusion,
         causes: draft.causes,
         interventions: draft.interventions,
-        fair: draft.fair,
+        fair: {
+          ...draft.fair,
+          signatureName: supervisorName,
+          signatureMode: supervisorMode,
+          signatureData: supervisorData,
+          supervisorSignatureName: supervisorName,
+          supervisorSignatureMode: supervisorMode,
+          supervisorSignatureData: supervisorData,
+          nurseSignatureName: nurseName,
+          nurseSignatureMode: nurseMode,
+          nurseSignatureData: nurseData,
+          headNurseSignatureName: headNurseName,
+          headNurseSignatureMode: headNurseMode,
+          headNurseSignatureData: headNurseData,
+        },
       },
       p_scores: draft.scores,
       p_follow_ups: draft.follow_ups,
